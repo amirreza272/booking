@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت — کلینیک مسیر</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --teal: #1a7f6e;
+            --teal-dark: #125c50;
+            --teal-light: #22a38e;
+            --teal-bg: #eaf6f3;
+            --gold: #c49a3c;
+            --gold-bg: #fbf3e2;
+            --ink: #1a2332;
+            --ink-muted: #6b7a8d;
+            --border: #e3e8ee;
+            --surface: #f4f6f8;
+            --card: #ffffff;
+            --danger: #c0392b;
+            --danger-bg: #fbdada;
+            --warn: #8a6d00;
+            --warn-bg: #fff2c9;
+            --blocked: #5b6570;
+            --blocked-bg: #e6e8ea;
+            --radius: 14px;
+            --radius-sm: 9px;
+            --shadow: 0 2px 14px rgba(20, 40, 50, .06);
+            --shadow-hover: 0 10px 30px rgba(20, 40, 50, .12);
+        }
+
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background: var(--surface);
+            margin: 0;
+            color: var(--ink);
+            font-size: 14px;
+        }
+
+        h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0 0 12px;
+            color: var(--ink);
+        }
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 232px;
+            flex-shrink: 0;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 22px 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding-bottom: 18px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .brand strong { display: block; font-size: 14px; }
+        .brand small { font-size: 11px; color: var(--ink-muted); }
+
+        .side-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+        }
+
+        .side-nav button.tab-btn {
+            text-align: right;
+            padding: 10px 12px;
+            border: none;
+            background: none;
+            border-radius: var(--radius-sm);
+            font-size: 13.5px;
+            font-family: inherit;
+            color: var(--ink-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            transition: background .15s, color .15s;
+        }
+
+        .side-nav button.tab-btn .ic { font-size: 15px; }
+
+        .side-nav button.tab-btn:hover {
+            background: var(--teal-bg);
+            color: var(--teal-dark);
+        }
+
+        .side-nav button.tab-btn.active {
+            background: var(--teal);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .logout-link {
+            margin-top: auto;
+            text-align: center;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--ink-muted);
+            text-decoration: none;
+        }
+
+        .logout-link:hover { color: var(--danger); }
+
+        .content {
+            flex: 1;
+            padding: 28px 32px;
+            max-width: 1240px;
+        }
+
+        .tab { display: none; }
+        .tab.active { display: block; }
+
+        .cards {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            box-shadow: var(--shadow);
+            min-width: 140px;
+            transition: box-shadow .2s, transform .2s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card .num { font-size: 25px; font-weight: 800; color: var(--teal-dark); }
+        .card .lbl { font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        th, td {
+            padding: 11px 12px;
+            text-align: right;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--surface);
+            color: var(--ink-muted);
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #fafcfd; }
+
+        tr.past-row, div.past-row {
+            opacity: .42;
+            transition: opacity .15s;
+        }
+        tr.past-row:hover, div.past-row:hover { opacity: .8; }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge.paid { background: #d4f4dd; color: #1a7f4e; }
+        .badge.cancel { background: var(--danger-bg); color: var(--danger); }
+        .badge.not { background: var(--warn-bg); color: var(--warn); }
+        .badge.blocked { background: var(--blocked-bg); color: var(--blocked); }
+
+        button.action {
+            padding: 6px 11px;
+            margin-left: 4px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-family: inherit;
+            transition: all .15s;
+        }
+
+        button.action:hover { background: var(--surface); border-color: #ccc; }
+        button.action.danger { border-color: #e3b6b6; color: var(--danger); }
+        button.action.danger:hover { background: var(--danger-bg); }
+        button.action.gold { border-color: var(--gold); color: var(--warn); background: var(--gold-bg); }
+        button.action.gold:hover { background: #f5e4bd; }
+
+        button.primary {
+            background: linear-gradient(135deg, var(--teal), var(--teal-light));
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(26, 127, 110, .25);
+            transition: filter .15s;
+        }
+
+        button.primary:hover { filter: brightness(1.08); }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filters input, .filters select {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            background: var(--card);
+        }
+
+        .filters input[type="text"] { min-width: 210px; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 7px;
+        }
+
+        .cal-weekday-hdr {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            padding-bottom: 4px;
+        }
+
+        .day-cell {
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            padding: 8px;
+            min-height: 62px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .day-cell:hover { border-color: var(--teal-light); box-shadow: var(--shadow); }
+        .day-cell.has-blocked { border-color: #ccc; background: #fbfbfb; }
+        .day-cell .dnum { font-weight: 700; margin-bottom: 4px; }
+        .day-cell .dcount { font-size: 10.5px; color: var(--teal); font-weight: 600; }
+        .day-cell .dblocked { font-size: 10.5px; color: var(--ink-muted); }
+
+        .layout-with-side {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .side-panel {
+            width: 340px;
+            flex-shrink: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .block-form {
+            background: var(--surface);
+            border: 1px dashed #c9d2da;
+            border-radius: var(--radius-sm);
+            padding: 13px;
+            margin-bottom: 16px;
+        }
+
+        .block-form h5 { margin: 0 0 8px; font-size: 13px; color: var(--ink); }
+
+        .block-form label {
+            display: block;
+            font-size: 11px;
+            color: var(--ink-muted);
+            margin-top: 7px;
+            margin-bottom: 3px;
+        }
+
+        .block-form input {
+            width: 100%;
+            padding: 7px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .quick-times {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .quick-times button {
+            padding: 3px 9px;
+            font-size: 11px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .quick-times button:hover { background: var(--teal-bg); border-color: var(--teal-light); }
+
+        .modal-bg {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 30, 40, .45);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal-bg.active { display: flex; }
+
+        .modal {
+            background: var(--card);
+            padding: 24px;
+            border-radius: var(--radius);
+            width: 340px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .modal h4 { font-size: 16px; }
+
+        .modal label {
+            display: block;
+            font-size: 12px;
+            margin-top: 11px;
+            margin-bottom: 4px;
+            color: var(--ink-muted);
+        }
+
+        .modal input, .modal select, .modal textarea {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        .modal input:focus, .modal select:focus, .modal textarea:focus {
+            outline: none;
+            border-color: var(--teal);
+        }
+
+        .modal .actions { display: flex; gap: 8px; margin-top: 18px; }
+        .modal .actions .primary, .modal .actions .action { flex: 1; text-align: center; }
+
+        .sms-text {
+            max-width: 260px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            color: var(--ink-muted);
+        }
+
+        #m-customer-suggestions {
+            margin-top: 4px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .suggestion-item {
+            padding: 8px 10px;
+            font-size: 12.5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: none;
+            cursor: pointer;
+        }
+
+        .suggestion-item:first-child { border-top: 1px solid var(--border); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+        .suggestion-item:last-child { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+        .suggestion-item:hover { background: var(--teal-bg); }
+
+        .empty-hint {
+            padding: 30px 10px;
+            text-align: center;
+            color: var(--ink-muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 760px) {
+            .app-shell { flex-direction: column; }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                align-items: center;
+                padding: 10px 14px;
+                overflow-x: auto;
+                border-left: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .brand { border-bottom: none; margin-bottom: 0; padding: 0 10px 0 0; }
+            .side-nav { flex-direction: row; flex: none; }
+            .logout-link { margin-top: 0; border-top: none; padding: 0 0 0 10px; }
+            .content { padding: 18px 16px; }
+            .layout-with-side { flex-direction: column; }
+            .side-panel { width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-mark">م</span>
+                <div>
+                    <strong>کلینیک مسیر</strong>
+                    <small>پنل مدیریت</small>
+                </div>
+            </div>
+            <nav class="side-nav">
+                <button class="tab-btn active" data-tab="dashboard"><span class="ic">📊</span> داشبورد</button>
+                <button class="tab-btn" data-tab="calendar"><span class="ic">🗓️</span> تقویم</button>
+                <button class="tab-btn" data-tab="appointments"><span class="ic">📋</span> نوبت‌ها</button>
+                <button class="tab-btn" data-tab="customers"><span class="ic">🎗️</span> باشگاه مشتریان</button>
+                <button class="tab-btn" data-tab="finance"><span class="ic">💰</span> مالی</button>
+                <button class="tab-btn" data-tab="sms"><span class="ic">✉️</span> پیامک‌ها</button>
+            </nav>
+            <a class="logout-link" href="/masircenter/{{ username }}/logout">خروج</a>
+        </aside>
+
+        <main class="content">
+
+            <div class="tab active" id="tab-dashboard">
+                <div class="cards" id="dash-cards"></div>
+                <h4>نوبت‌های امروز</h4>
+                <table>
+                    <thead><tr><th>ساعت</th><th>نام</th><th>موبایل</th><th>نوع</th><th>وضعیت</th></tr></thead>
+                    <tbody id="dash-today-body"></tbody>
+                </table>
+                <h4 style="margin-top:22px;">نوبت‌های فردا</h4>
+                <table>
+                    <thead><tr><th>ساعت</th><th>نام</th><th>موبایل</th><th>نوع</th><th>وضعیت</th></tr></thead>
+                    <tbody id="dash-tomorrow-body"></tbody>
+                </table>
+            </div>
+
+            <div class="tab" id="tab-calendar">
+                <div class="filters">
+                    <select id="cal-jyear"></select>
+                    <select id="cal-jmonth"></select>
+                    <button class="primary" onclick="loadCalendar()">نمایش</button>
+                </div>
+                <div class="layout-with-side">
+                    <div style="flex:1;">
+                        <div class="calendar-grid" id="cal-weekday-hdr"></div>
+                        <div style="height:7px;"></div>
+                        <div class="calendar-grid" id="cal-grid"></div>
+                    </div>
+                    <div class="side-panel" id="cal-side">
+                        <p class="empty-hint">روی یک روز کلیک کن</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab" id="tab-appointments">
+                <div class="filters">
+                    <input type="date" id="f-from">
+                    <input type="date" id="f-to">
+                    <select id="f-status">
+                        <option value="">همه‌ی وضعیت‌ها</option>
+                        <option value="paid">پرداخت‌شده</option>
+                        <option value="not">بدون پرداخت</option>
+                        <option value="cancel">کنسل‌شده</option>
+                        <option value="blocked">مسدود</option>
+                    </select>
+                    <input type="text" id="f-search" placeholder="جستجو با نام یا موبایل">
+                    <button class="primary" onclick="loadAppointments()">فیلتر</button>
+                    <button class="action" onclick="openManualModal()">+ ثبت دستی نوبت</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>تاریخ</th><th>ساعت</th><th>نام</th><th>موبایل</th>
+                            <th>نوع</th><th>وضعیت</th><th>یادداشت</th><th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appt-body"></tbody>
+                </table>
+            </div>
+
+            <div class="tab" id="tab-customers">
+                <div class="filters">
+                    <input type="text" id="cust-search" placeholder="جستجو با نام، موبایل یا شهر">
+                    <button class="primary" onclick="loadCustomers()">جستجو</button>
+                    <button class="action" onclick="openCustomerModal()">+ مشتری جدید</button>
+                    <button class="action" onclick="document.getElementById('cust-import-file').click()">📥 وارد کردن از اکسل</button>
+                    <input type="file" id="cust-import-file" accept=".xlsx,.xls" style="display:none" onchange="importCustomersExcel(this.files[0])">
+                </div>
+                <p style="color:var(--ink-muted); font-size:11px; margin-bottom:12px;">
+                    فرمت فایل اکسل: ستون A نام، ستون B شماره، ستون C تاریخ تولد، ستون D شهر (بدون نیاز به ردیف هدر).
+                </p>
+                <p style="color:var(--ink-muted); font-size:12px; margin-bottom:12px;">
+                    مشتری‌هایی که از طریق رزرو آنلاین یا ثبت دستی میان، خودکار اینجا اضافه می‌شن — تاریخ تولد و شهر رو خودت تکمیل کن.
+                </p>
+                <table>
+                    <thead><tr><th>نام</th><th>موبایل</th><th>تاریخ تولد</th><th>شهر</th><th>عملیات</th></tr></thead>
+                    <tbody id="cust-body"></tbody>
+                </table>
+            </div>
+
+            <div class="tab" id="tab-finance">
+                <div class="filters">
+                    <select id="fin-jyear"></select>
+                    <select id="fin-jmonth"></select>
+                    <button class="primary" onclick="loadFinance()">نمایش</button>
+                </div>
+                <div class="cards" id="fin-cards"></div>
+                <h4>طلب از مراجعین (نوبت‌های ثبت‌شده بدون پرداخت)</h4>
+                <table>
+                    <thead><tr><th>نام</th><th>موبایل</th><th>تعداد جلسات</th><th>طلب (تومان)</th><th>عملیات</th></tr></thead>
+                    <tbody id="debt-body"></tbody>
+                </table>
+            </div>
+
+            <div class="tab" id="tab-sms">
+                <div class="filters">
+                    <label style="font-size:13px; display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" id="sms-only-failed" onchange="loadSmsLogs()">
+                        فقط ارسال‌های ناموفق
+                    </label>
+                    <button class="action" onclick="loadSmsLogs()">تازه‌سازی</button>
+                </div>
+                <p style="color:var(--ink-muted); font-size:12px; margin-bottom:12px;">
+                    خط پیامک هنوز فعال نشده — این جدول از همون لحظه‌ای که خط وصل بشه پر می‌شه.
+                </p>
+                <table>
+                    <thead><tr><th>تاریخ</th><th>شماره</th><th>متن</th><th>وضعیت</th><th>خطا</th></tr></thead>
+                    <tbody id="sms-body"></tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <div class="modal-bg" id="edit-modal">
+        <div class="modal">
+            <h4>ویرایش نوبت</h4>
+            <input type="hidden" id="ed-id">
+            <label>نام مراجع</label><input type="text" id="ed-name">
+            <label>موبایل</label><input type="text" id="ed-phone">
+            <label>تاریخ (شمسی)</label>
+            <div style="display:flex; gap:5px;">
+                <select id="ed-jday" style="flex:1;"></select>
+                <select id="ed-jmonth" style="flex:1.6;"></select>
+                <select id="ed-jyear" style="flex:1;"></select>
+            </div>
+            <p style="font-size:11px; color:var(--ink-muted); margin:4px 0 0;">
+                محدودیتی برای تاریخ گذشته وجود نداره — می‌تونی نوبت تاریخی هم ثبت کنی.
+            </p>
+            <label>ساعت</label>
+            <input type="time" id="ed-time">
+            <div class="quick-times" id="ed-quick-times"></div>
+            <label>نوع جلسه</label>
+            <select id="ed-type">
+                <option value="online">آنلاین</option>
+                <option value="inperson">حضوری</option>
+                <option value="blocked">مسدود</option>
+            </select>
+            <label>وضعیت پرداخت</label>
+            <select id="ed-status">
+                <option value="paid">پرداخت‌شده</option>
+                <option value="not">بدون پرداخت</option>
+                <option value="cancel">کنسل‌شده</option>
+                <option value="blocked">مسدود</option>
+            </select>
+            <label>یادداشت</label><textarea id="ed-notes" rows="2"></textarea>
+            <div id="ed-err" style="color:var(--danger); font-size:12px;"></div>
+            <div class="actions">
+                <button class="primary" onclick="submitEdit()">ذخیره تغییرات</button>
+                <button class="action" onclick="closeModal('edit-modal')">انصراف</button>
+            </div>
+            <button class="action danger" style="width:100%; margin-top:10px;" onclick="deleteAppointmentFromEdit()">🗑 حذف کامل این نوبت</button>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="manual-modal">
+        <div class="modal">
+            <h4>ثبت نوبت بدون پرداخت</h4>
+            <p style="font-size:11px; color:var(--ink-muted); margin:4px 0 0;">
+                بدون هیچ محدودیتی — جمعه، امروز، ساعت‌های استاندارد، حتی تاریخ گذشته هم مجازه.
+            </p>
+            <label>جستجوی مشتری (اختیاری — برای پر کردن خودکار)</label>
+            <input type="text" id="m-customer-search" placeholder="نام یا موبایل رو تایپ کن..." oninput="searchCustomerForManual(this.value)">
+            <div id="m-customer-suggestions"></div>
+
+            <label>نام مراجع</label><input type="text" id="m-name">
+            <label>موبایل (اختیاری)</label><input type="text" id="m-phone">
+            <label>تاریخ (شمسی)</label>
+            <div style="display:flex; gap:5px;">
+                <select id="m-jday" style="flex:1;"></select>
+                <select id="m-jmonth" style="flex:1.6;"></select>
+                <select id="m-jyear" style="flex:1;"></select>
+            </div>
+            <label>ساعت</label>
+            <input type="time" id="m-time">
+            <div class="quick-times" id="m-quick-times"></div>
+            <label>نوع جلسه</label>
+            <select id="m-type">
+                <option value="online">آنلاین</option>
+                <option value="inperson">حضوری</option>
+            </select>
+            <label>یادداشت</label><textarea id="m-notes" rows="2"></textarea>
+            <div id="m-err" style="color:var(--danger); font-size:12px;"></div>
+            <div class="actions">
+                <button class="primary" onclick="submitManual()">ثبت</button>
+                <button class="action" onclick="closeModal('manual-modal')">انصراف</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="customer-modal">
+        <div class="modal">
+            <h4 id="cust-modal-title">مشتری جدید</h4>
+            <input type="hidden" id="cust-id">
+            <label>موبایل</label><input type="text" id="cust-phone">
+            <label>نام</label><input type="text" id="cust-name">
+            <label>تاریخ تولد</label><input type="text" id="cust-birthdate" placeholder="مثلاً ۱۳۷۰/۰۵/۱۲">
+            <label>شهر</label><input type="text" id="cust-city">
+            <div id="cust-err" style="color:var(--danger); font-size:12px;"></div>
+            <div class="actions">
+                <button class="primary" onclick="submitCustomer()">ذخیره</button>
+                <button class="action" onclick="closeModal('customer-modal')">انصراف</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='jalaali.js') }}"></script>
+    <script>
+        const API = '.';
+        const STANDARD_TIMES = ["11:00", "12:15", "16:00", "17:15", "18:30", "19:30", "21:00"];
+        const JALALI_MONTHS = [
+            'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+            'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+        ];
+        const WEEKDAY_HDR = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
+        const STATUS_INFO = {
+            paid:    { label: 'پرداخت‌شده', icon: '✅' },
+            not:     { label: 'بدون پرداخت', icon: '⏳' },
+            cancel:  { label: 'کنسل‌شده', icon: '🚫' },
+            blocked: { label: 'مسدود', icon: '🔒' },
+        };
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                if (btn.dataset.tab === 'dashboard') loadDashboard();
+                if (btn.dataset.tab === 'calendar') loadCalendar();
+                if (btn.dataset.tab === 'appointments') loadAppointments();
+                if (btn.dataset.tab === 'customers') loadCustomers();
+                if (btn.dataset.tab === 'finance') loadFinance();
+                if (btn.dataset.tab === 'sms') loadSmsLogs();
+            });
+        });
+
+        function fmtDate(d) { return d.toISOString().slice(0, 10); }
+        function statusBadge(s) {
+            const info = STATUS_INFO[s] || { label: s, icon: '' };
+            return `<span class="badge ${s}">${info.icon} ${info.label}</span>`;
+        }
+        function typeLabel(t) {
+            if (t === 'online') return 'آنلاین';
+            if (t === 'inperson') return 'حضوری';
+            if (t === 'blocked') return 'مسدود';
+            return t || '—';
+        }
+
+        function todayJalali() {
+            const t = new Date();
+            return window.jalaali.toJalaali(t.getFullYear(), t.getMonth() + 1, t.getDate());
+        }
+
+        function fillJalaliSelectors(yearSelId, monthSelId) {
+            const { jy, jm } = todayJalali();
+            const yearSel = document.getElementById(yearSelId);
+            const monthSel = document.getElementById(monthSelId);
+            yearSel.innerHTML = '';
+            for (let y = jy - 1; y <= jy + 1; y++) {
+                const opt = document.createElement('option');
+                opt.value = y; opt.textContent = y;
+                if (y === jy) opt.selected = true;
+                yearSel.appendChild(opt);
+            }
+            monthSel.innerHTML = '';
+            JALALI_MONTHS.forEach((name, i) => {
+                const opt = document.createElement('option');
+                opt.value = i + 1; opt.textContent = name;
+                if (i + 1 === jm) opt.selected = true;
+                monthSel.appendChild(opt);
+            });
+        }
+
+        function jalaliMonthRange(jy, jm) {
+            const daysInMonth = window.jalaali.jalaaliMonthLength(jy, jm);
+            const start = window.jalaali.toGregorian(jy, jm, 1);
+            const end = window.jalaali.toGregorian(jy, jm, daysInMonth);
+            const pad = n => String(n).padStart(2, '0');
+            return {
+                from: `${start.gy}-${pad(start.gm)}-${pad(start.gd)}`,
+                to: `${end.gy}-${pad(end.gm)}-${pad(end.gd)}`,
+                daysInMonth,
+            };
+        }
+
+        function jalaliFirstWeekday(jy, jm) {
+            const g = window.jalaali.toGregorian(jy, jm, 1);
+            const jsDay = new Date(g.gy, g.gm - 1, g.gd).getDay();
+            return jsDay === 6 ? 0 : jsDay + 1;
+        }
+
+        function gregDateStr(jy, jm, jd) {
+            const g = window.jalaali.toGregorian(jy, jm, jd);
+            const pad = n => String(n).padStart(2, '0');
+            return `${g.gy}-${pad(g.gm)}-${pad(g.gd)}`;
+        }
+
+        function renderQuickTimes(containerId, inputId) {
+            const box = document.getElementById(containerId);
+            box.innerHTML = STANDARD_TIMES.map(t =>
+                `<button type="button" onclick="document.getElementById('${inputId}').value='${t}'">${t}</button>`
+            ).join('');
+        }
+
+        function loadDashboard() {
+            const today = new Date();
+            const tomorrow = new Date(Date.now() + 86400000);
+            const todayStr = fmtDate(today);
+            const tomorrowStr = fmtDate(tomorrow);
+
+            fetch(`${API}/api/appointments?from=${todayStr}&to=${tomorrowStr}`)
+                .then(r => r.json())
+                .then(items => {
+                    const todayItems = items.filter(a => a.date === todayStr && a.payment_status !== 'cancel');
+                    const tomorrowItems = items.filter(a => a.date === tomorrowStr && a.payment_status !== 'cancel');
+
+                    document.getElementById('dash-cards').innerHTML = `
+                <div class="card"><div class="num">${todayItems.length}</div><div class="lbl">نوبت امروز</div></div>
+                <div class="card"><div class="num">${tomorrowItems.length}</div><div class="lbl">نوبت فردا</div></div>
+            `;
+
+                    document.getElementById('dash-today-body').innerHTML = todayItems.map(a =>
+                        `<tr class="${isPastAppointment(a) ? 'past-row' : ''}"><td>${a.time}</td><td>${a.name}</td><td>${a.phone === '-' ? '—' : a.phone}</td><td>${typeLabel(a.session_type)}</td><td>${statusBadge(a.payment_status)}</td></tr>`
+                    ).join('') || '<tr><td colspan="5" class="empty-hint">امروز نوبتی نداری</td></tr>';
+
+                    document.getElementById('dash-tomorrow-body').innerHTML = tomorrowItems.map(a =>
+                        `<tr><td>${a.time}</td><td>${a.name}</td><td>${a.phone}</td><td>${typeLabel(a.session_type)}</td><td>${statusBadge(a.payment_status)}</td></tr>`
+                    ).join('') || '<tr><td colspan="5" class="empty-hint">فردا هنوز نوبتی نیست</td></tr>';
+                });
+        }
+
+        let calCurrentRange = null;
+
+        function loadCalendar() {
+            if (!document.getElementById('cal-jyear').options.length) {
+                fillJalaliSelectors('cal-jyear', 'cal-jmonth');
+            }
+            const jy = parseInt(document.getElementById('cal-jyear').value);
+            const jm = parseInt(document.getElementById('cal-jmonth').value);
+            const { from, to, daysInMonth } = jalaliMonthRange(jy, jm);
+            calCurrentRange = { jy, jm };
+
+            document.getElementById('cal-weekday-hdr').innerHTML =
+                WEEKDAY_HDR.map(d => `<div class="cal-weekday-hdr">${d}</div>`).join('');
+
+            fetch(`${API}/api/calendar?from=${from}&to=${to}`)
+                .then(r => r.json())
+                .then(days => {
+                    const startWD = jalaliFirstWeekday(jy, jm);
+                    let html = '';
+                    for (let i = 0; i < startWD; i++) html += `<div></div>`;
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = gregDateStr(jy, jm, d);
+                        const info = days[dateStr];
+                        const count = info ? (info.total - (info.cancel || 0) - (info.blocked || 0)) : 0;
+                        const blockedCount = info ? (info.blocked || 0) : 0;
+                        html += `<div class="day-cell ${blockedCount ? 'has-blocked' : ''}" onclick="showDayDetail('${dateStr}', ${d})">
+                            <div class="dnum">${d}</div>
+                            ${count ? `<div class="dcount">${count} نوبت</div>` : ''}
+                            ${blockedCount ? `<div class="dblocked">🔒 ${blockedCount}</div>` : ''}
+                         </div>`;
+                    }
+                    document.getElementById('cal-grid').innerHTML = html;
+                });
+        }
+
+        function showDayDetail(dateStr, jDay) {
+            fetch(`${API}/api/appointments?from=${dateStr}&to=${dateStr}`)
+                .then(r => r.json())
+                .then(items => {
+                    const side = document.getElementById('cal-side');
+                    const label = calCurrentRange
+                        ? `${jDay} ${JALALI_MONTHS[calCurrentRange.jm - 1]} ${calCurrentRange.jy}`
+                        : dateStr;
+
+                    let itemsHtml = '';
+                    if (!items.length) {
+                        itemsHtml = `<p class="empty-hint">نوبتی ثبت نشده</p>`;
+                    } else {
+                        itemsHtml = items.map(a => `
+                            <div class="${isPastAppointment(a) ? 'past-row' : ''}" style="border-bottom:1px solid var(--border); padding:9px 0; font-size:13px;">
+                                <div>${a.time} — ${a.name} ${statusBadge(a.payment_status)}</div>
+                                <div style="color:var(--ink-muted);">${a.phone === '-' ? '—' : a.phone} — ${typeLabel(a.session_type)}</div>
+                                ${a.payment_status === 'blocked' ? `
+                                    <button class="action danger" onclick="unblockSlot(${a.id})">آزاد کن</button>
+                                ` : (a.payment_status !== 'cancel' ? `
+                                    <button class="action danger" onclick="cancelAppointment(${a.id})">کنسل</button>
+                                ` : '')}
+                                <button class="action" onclick='openEditModal(${JSON.stringify(a)})'>ویرایش</button>
+                                <button class="action danger" onclick="deleteAppointmentHard(${a.id})">حذف</button>
+                            </div>
+                        `).join('');
+                    }
+
+                    side.innerHTML = `
+                        <div class="block-form">
+                            <h5>🔒 مسدودسازی ${label}</h5>
+                            <label>ساعت</label>
+                            <input type="time" id="block-time">
+                            <div class="quick-times" id="block-quick-times"></div>
+                            <label>دلیل (اختیاری)</label>
+                            <input type="text" id="block-reason" placeholder="مثلاً قرار شخصی خانم دکتر">
+                            <div id="block-err" style="color:var(--danger); font-size:11px; margin-top:6px;"></div>
+                            <button class="primary" style="margin-top:9px; width:100%;" onclick="submitBlock('${dateStr}', ${jDay})">مسدود کن</button>
+                        </div>
+                        <b>${label}</b>
+                        ${itemsHtml}
+                    `;
+                    renderQuickTimes('block-quick-times', 'block-time');
+                });
+        }
+
+        function submitBlock(dateStr, jDay) {
+            const time = document.getElementById('block-time').value;
+            const reason = document.getElementById('block-reason').value.trim();
+            const errBox = document.getElementById('block-err');
+            errBox.textContent = '';
+
+            if (!time) {
+                errBox.textContent = 'ساعت را انتخاب کن';
+                return;
+            }
+
+            fetch(`${API}/api/appointments/block`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: dateStr, time, reason }),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        loadCalendar();
+                        loadDashboard();
+                        showDayDetail(dateStr, jDay);
+                    } else {
+                        errBox.textContent = res.message || 'خطا';
+                    }
+                });
+        }
+
+        function unblockSlot(id) {
+            if (!confirm('این مسدودسازی برداشته بشه؟')) return;
+            fetch(`${API}/api/appointments/${id}/cancel`, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) { loadCalendar(); loadDashboard(); }
+                    else alert(res.message || 'خطا');
+                });
+        }
+
+        function loadAppointments() {
+            const from = document.getElementById('f-from').value;
+            const to = document.getElementById('f-to').value;
+            const status = document.getElementById('f-status').value;
+            const q = document.getElementById('f-search').value.trim();
+
+            let url = `${API}/api/appointments?`;
+            if (from) url += `from=${from}&`;
+            if (to) url += `to=${to}&`;
+            if (status) url += `status=${status}&`;
+            if (q) url += `q=${encodeURIComponent(q)}&`;
+
+            fetch(url).then(r => r.json()).then(items => {
+                document.getElementById('appt-body').innerHTML = items.map(a => `
+            <tr class="${isPastAppointment(a) ? 'past-row' : ''}">
+                <td>${a.date}</td><td>${a.time}</td><td>${a.name}</td><td>${a.phone === '-' ? '—' : a.phone}</td>
+                <td>${typeLabel(a.session_type)}</td><td>${statusBadge(a.payment_status)}</td>
+                <td>${a.notes || ''}</td>
+                <td>
+                    ${a.payment_status === 'blocked' ? `
+                        <button class="action danger" onclick="unblockSlot(${a.id})">آزاد کن</button>
+                    ` : (a.payment_status !== 'cancel' ? `
+                        <button class="action danger" onclick="cancelAppointment(${a.id})">کنسل</button>
+                    ` : '')}
+                    <button class="action" onclick='openEditModal(${JSON.stringify(a)})'>ویرایش</button>
+                    <button class="action danger" onclick="deleteAppointmentHard(${a.id})">حذف</button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="8" class="empty-hint">نوبتی یافت نشد</td></tr>';
+            });
+        }
+
+        // نوبتی که زمانش گذشته، وضعیتش «کنسل» نیست، و یادداشتی هم نداره —
+        // کم‌رنگ می‌شه که بفهمیم تشکیل شده و دیگه نیاز به توجه نداره.
+        function isPastAppointment(a) {
+            // فقط یادداشت باعث پررنگ‌موندن می‌شه؛ کنسل‌شدن باعث پررنگ‌موندن
+            // نمی‌شه — نوبت کنسل‌شده‌ی گذشته هم باید کم‌رنگ باشه (بجه‌ش
+            // خودش وضعیتش رو نشون می‌ده، نیازی به توجه اضافه نداره).
+            if (a.notes && a.notes.trim()) return false;
+            try {
+                const dt = new Date(`${a.date}T${a.time}:00`);
+                return dt.getTime() < Date.now();
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function cancelAppointment(id) {
+            if (!confirm('این نوبت کنسل شود؟')) return;
+            fetch(`${API}/api/appointments/${id}/cancel`, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) { loadAppointments(); loadCalendar(); loadDashboard(); }
+                    else alert(res.message || 'خطا در کنسل نوبت');
+                });
+        }
+
+        function deleteAppointmentHard(id) {
+            if (!confirm('این نوبت کاملاً حذف بشه؟ این کار برگشت‌ناپذیره و از پنل، تقویم، مالی و گوگل‌شیت هم پاک می‌شه.')) return;
+            fetch(`${API}/api/appointments/${id}/delete`, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) { loadAppointments(); loadCalendar(); loadDashboard(); loadFinance(); }
+                    else alert(res.message || 'خطا در حذف نوبت');
+                });
+        }
+
+        // ───────── انتخابگر تاریخ شمسی (برای مودال‌های ثبت دستی/ویرایش) ─────────
+        function fillJalaliDatePicker(prefix, gregDateStr) {
+            let jy, jm, jd;
+            if (gregDateStr) {
+                const [gy, gm, gd] = gregDateStr.split('-').map(Number);
+                ({ jy, jm, jd } = window.jalaali.toJalaali(gy, gm, gd));
+            } else {
+                const t = new Date();
+                ({ jy, jm, jd } = window.jalaali.toJalaali(t.getFullYear(), t.getMonth() + 1, t.getDate()));
+            }
+
+            const yearSel = document.getElementById(`${prefix}-jyear`);
+            const monthSel = document.getElementById(`${prefix}-jmonth`);
+
+            yearSel.innerHTML = '';
+            for (let y = jy - 5; y <= jy + 2; y++) {
+                const opt = document.createElement('option');
+                opt.value = y; opt.textContent = y;
+                if (y === jy) opt.selected = true;
+                yearSel.appendChild(opt);
+            }
+
+            monthSel.innerHTML = '';
+            JALALI_MONTHS.forEach((name, i) => {
+                const opt = document.createElement('option');
+                opt.value = i + 1; opt.textContent = name;
+                if (i + 1 === jm) opt.selected = true;
+                monthSel.appendChild(opt);
+            });
+
+            _fillJalaliDayOptions(prefix, jy, jm, jd);
+
+            yearSel.onchange = () => _fillJalaliDayOptions(prefix, parseInt(yearSel.value), parseInt(monthSel.value));
+            monthSel.onchange = () => _fillJalaliDayOptions(prefix, parseInt(yearSel.value), parseInt(monthSel.value));
+        }
+
+        function _fillJalaliDayOptions(prefix, jy, jm, selectedDay) {
+            const daySel = document.getElementById(`${prefix}-jday`);
+            const daysInMonth = window.jalaali.jalaaliMonthLength(jy, jm);
+            const keepDay = selectedDay || parseInt(daySel.value) || 1;
+
+            daySel.innerHTML = '';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const opt = document.createElement('option');
+                opt.value = d; opt.textContent = d;
+                if (d === Math.min(keepDay, daysInMonth)) opt.selected = true;
+                daySel.appendChild(opt);
+            }
+        }
+
+        function getGregDateFromPicker(prefix) {
+            const jy = parseInt(document.getElementById(`${prefix}-jyear`).value);
+            const jm = parseInt(document.getElementById(`${prefix}-jmonth`).value);
+            const jd = parseInt(document.getElementById(`${prefix}-jday`).value);
+            const g = window.jalaali.toGregorian(jy, jm, jd);
+            const pad = n => String(n).padStart(2, '0');
+            return `${g.gy}-${pad(g.gm)}-${pad(g.gd)}`;
+        }
+
+        function openEditModal(a) {
+            document.getElementById('ed-id').value = a.id;
+            document.getElementById('ed-name').value = a.name || '';
+            document.getElementById('ed-phone').value = (a.phone === '-' ? '' : a.phone) || '';
+            fillJalaliDatePicker('ed', a.date);
+            document.getElementById('ed-time').value = a.time;
+            document.getElementById('ed-type').value = a.session_type;
+            document.getElementById('ed-status').value = a.payment_status;
+            document.getElementById('ed-notes').value = a.notes || '';
+            document.getElementById('ed-err').textContent = '';
+            renderQuickTimes('ed-quick-times', 'ed-time');
+            document.getElementById('edit-modal').classList.add('active');
+        }
+
+        function submitEdit() {
+            const id = document.getElementById('ed-id').value;
+            const body = {
+                name: document.getElementById('ed-name').value,
+                phone: document.getElementById('ed-phone').value,
+                date: getGregDateFromPicker('ed'),
+                time: document.getElementById('ed-time').value,
+                session_type: document.getElementById('ed-type').value,
+                payment_status: document.getElementById('ed-status').value,
+                notes: document.getElementById('ed-notes').value,
+            };
+            fetch(`${API}/api/appointments/${id}/edit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        closeModal('edit-modal');
+                        loadAppointments(); loadCalendar(); loadDashboard(); loadFinance();
+                    } else {
+                        document.getElementById('ed-err').textContent = res.message || 'خطا';
+                    }
+                });
+        }
+
+        function deleteAppointmentFromEdit() {
+            const id = document.getElementById('ed-id').value;
+            if (!id) return;
+            if (!confirm('این نوبت کاملاً حذف بشه؟ این کار برگشت‌ناپذیره و از پنل، تقویم، مالی و گوگل‌شیت هم پاک می‌شه.')) return;
+            fetch(`${API}/api/appointments/${id}/delete`, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        closeModal('edit-modal');
+                        loadAppointments(); loadCalendar(); loadDashboard(); loadFinance();
+                    } else {
+                        alert(res.message || 'خطا در حذف نوبت');
+                    }
+                });
+        }
+
+        let mCustomerSearchTimer = null;
+        function searchCustomerForManual(q) {
+            clearTimeout(mCustomerSearchTimer);
+            const box = document.getElementById('m-customer-suggestions');
+            if (!q || q.trim().length < 2) { box.innerHTML = ''; return; }
+
+            mCustomerSearchTimer = setTimeout(() => {
+                fetch(`${API}/api/customers?q=${encodeURIComponent(q.trim())}`)
+                    .then(r => r.json())
+                    .then(items => {
+                        box.innerHTML = items.slice(0, 6).map(c => `
+                            <div class="suggestion-item" onclick='pickCustomerForManual(${JSON.stringify(c)})'>
+                                ${c.name} — ${c.phone}
+                            </div>
+                        `).join('') || '<div class="suggestion-item" style="cursor:default; color:var(--ink-muted);">موردی پیدا نشد</div>';
+                    });
+            }, 250);
+        }
+
+        function pickCustomerForManual(c) {
+            document.getElementById('m-name').value = c.name;
+            document.getElementById('m-phone').value = c.phone;
+            document.getElementById('m-customer-search').value = '';
+            document.getElementById('m-customer-suggestions').innerHTML = '';
+        }
+
+        function openManualModal() {
+            document.getElementById('m-err').textContent = '';
+            document.getElementById('m-customer-search').value = '';
+            document.getElementById('m-customer-suggestions').innerHTML = '';
+            fillJalaliDatePicker('m');
+            renderQuickTimes('m-quick-times', 'm-time');
+            document.getElementById('manual-modal').classList.add('active');
+        }
+
+        function submitManual() {
+            const body = {
+                name: document.getElementById('m-name').value,
+                phone: document.getElementById('m-phone').value,
+                date: getGregDateFromPicker('m'),
+                time: document.getElementById('m-time').value,
+                session_type: document.getElementById('m-type').value,
+                notes: document.getElementById('m-notes').value,
+            };
+            fetch(`${API}/api/appointments/manual`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        closeModal('manual-modal');
+                        loadAppointments(); loadDashboard();
+                    } else {
+                        document.getElementById('m-err').textContent = res.message || 'خطا';
+                    }
+                });
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function importCustomersExcel(file) {
+            if (!file) return;
+            const input = document.getElementById('cust-import-file');
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch(`${API}/api/customers/import`, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        const r = res.report;
+                        let msg = `وارد کردن انجام شد.\nردیف‌های معتبر: ${r.total}\nجدید: ${r.added}\nآپدیت‌شده: ${r.updated}`;
+                        if (r.errors && r.errors.length) {
+                            msg += `\n\nردیف‌های رد شده (${r.errors.length}):\n` + r.errors.slice(0, 10).join('\n');
+                        }
+                        alert(msg);
+                        loadCustomers();
+                    } else {
+                        alert(res.message || 'خطا در وارد کردن فایل');
+                    }
+                })
+                .catch(() => alert('خطا در ارسال فایل به سرور'))
+                .finally(() => { input.value = ''; });
+        }
+
+        function loadCustomers() {
+            const q = document.getElementById('cust-search').value.trim();
+            fetch(`${API}/api/customers${q ? '?q=' + encodeURIComponent(q) : ''}`)
+                .then(r => r.json())
+                .then(items => {
+                    document.getElementById('cust-body').innerHTML = items.map(c => `
+                <tr>
+                    <td>${c.name}</td><td>${c.phone}</td><td>${c.birthdate || '—'}</td><td>${c.city || '—'}</td>
+                    <td>
+                        <button class="action" onclick='openCustomerModal(${JSON.stringify(c)})'>ویرایش</button>
+                        <button class="action danger" onclick="deleteCustomer(${c.id})">حذف</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="empty-hint">هنوز مشتری‌ای ثبت نشده</td></tr>';
+                });
+        }
+
+        function openCustomerModal(c) {
+            document.getElementById('cust-err').textContent = '';
+            if (c) {
+                document.getElementById('cust-modal-title').textContent = 'ویرایش مشتری';
+                document.getElementById('cust-id').value = c.id;
+                document.getElementById('cust-phone').value = c.phone;
+                document.getElementById('cust-phone').disabled = true;
+                document.getElementById('cust-name').value = c.name;
+                document.getElementById('cust-birthdate').value = c.birthdate || '';
+                document.getElementById('cust-city').value = c.city || '';
+            } else {
+                document.getElementById('cust-modal-title').textContent = 'مشتری جدید';
+                document.getElementById('cust-id').value = '';
+                document.getElementById('cust-phone').value = '';
+                document.getElementById('cust-phone').disabled = false;
+                document.getElementById('cust-name').value = '';
+                document.getElementById('cust-birthdate').value = '';
+                document.getElementById('cust-city').value = '';
+            }
+            document.getElementById('customer-modal').classList.add('active');
+        }
+
+        function submitCustomer() {
+            const id = document.getElementById('cust-id').value;
+            const errBox = document.getElementById('cust-err');
+            errBox.textContent = '';
+
+            const body = {
+                name: document.getElementById('cust-name').value.trim(),
+                birthdate: document.getElementById('cust-birthdate').value.trim(),
+                city: document.getElementById('cust-city').value.trim(),
+            };
+
+            let url;
+            if (id) {
+                url = `${API}/api/customers/${id}/update`;
+            } else {
+                body.phone = document.getElementById('cust-phone').value.trim();
+                url = `${API}/api/customers`;
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) { closeModal('customer-modal'); loadCustomers(); }
+                    else errBox.textContent = res.message || 'خطا';
+                });
+        }
+
+        function deleteCustomer(id) {
+            if (!confirm('این مشتری از باشگاه حذف بشه؟')) return;
+            fetch(`${API}/api/customers/${id}/delete`, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) loadCustomers();
+                    else alert(res.message || 'خطا');
+                });
+        }
+
+        function loadFinance() {
+            if (!document.getElementById('fin-jyear').options.length) {
+                fillJalaliSelectors('fin-jyear', 'fin-jmonth');
+            }
+            const jy = parseInt(document.getElementById('fin-jyear').value);
+            const jm = parseInt(document.getElementById('fin-jmonth').value);
+            const { from, to } = jalaliMonthRange(jy, jm);
+            const label = `${JALALI_MONTHS[jm - 1]} ${jy}`;
+
+            fetch(`${API}/api/stats/monthly?from=${from}&to=${to}&label=${encodeURIComponent(label)}`)
+                .then(r => r.json()).then(s => {
+                    if (!s.success) return;
+                    const totalIncome = (s.income.online + s.income.inperson) / 10;
+                    const totalDebt = (s.debt.online + s.debt.inperson) / 10;
+                    document.getElementById('fin-cards').innerHTML = `
+            <div class="card"><div class="num">${s.total_appointments}</div><div class="lbl">کل نوبت‌ها — ${s.label}</div></div>
+            <div class="card"><div class="num">${s.cancelled}</div><div class="lbl">کنسل‌شده</div></div>
+            <div class="card"><div class="num">${s.blocked}</div><div class="lbl">مسدودشده</div></div>
+            <div class="card"><div class="num">${s.online_sessions}</div><div class="lbl">آنلاین</div></div>
+            <div class="card"><div class="num">${s.inperson_sessions}</div><div class="lbl">حضوری</div></div>
+            <div class="card"><div class="num">${totalIncome.toLocaleString()}</div><div class="lbl">درآمد (تومان)</div></div>
+            <div class="card"><div class="num">${totalDebt.toLocaleString()}</div><div class="lbl">طلب کل (تومان)</div></div>
+        `;
+                });
+
+            fetch(`${API}/api/clients/debts`).then(r => r.json()).then(debts => {
+                document.getElementById('debt-body').innerHTML = debts.map(d => `
+            <tr>
+                <td>${d.name}</td><td>${d.phone === '-' ? '—' : d.phone}</td><td>${d.sessions}</td>
+                <td>${(d.total_debt / 10).toLocaleString()}</td>
+                <td><button class="action gold" onclick='settleDebt(${JSON.stringify(d.appointment_ids)})'>تسویه شد</button></td>
+            </tr>
+        `).join('') || '<tr><td colspan="5" class="empty-hint">طلبی ثبت‌نشده</td></tr>';
+            });
+        }
+
+        function settleDebt(appointmentIds) {
+            if (!confirm('طلب این مورد تسویه بشه؟ (وضعیت نوبت(های) بدون‌پرداختش paid می‌شه)')) return;
+            fetch(`${API}/api/clients/settle-debt`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ appointment_ids: appointmentIds }),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) loadFinance();
+                    else alert(res.message || 'خطا');
+                });
+        }
+
+        function loadSmsLogs() {
+            const onlyFailed = document.getElementById('sms-only-failed').checked;
+            fetch(`${API}/api/sms-logs${onlyFailed ? '?failed=1' : ''}`)
+                .then(r => r.json())
+                .then(items => {
+                    document.getElementById('sms-body').innerHTML = items.map(s => `
+                <tr>
+                    <td>${s.created_at || ''}</td>
+                    <td>${s.phone}</td>
+                    <td class="sms-text">${(s.text || '').slice(0, 120)}</td>
+                    <td>${s.success ? '<span class="badge paid">✅ موفق</span>' : '<span class="badge cancel">🚫 ناموفق</span>'}</td>
+                    <td>${s.error || ''}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="5" class="empty-hint">هنوز پیامکی ارسال نشده</td></tr>';
+                });
+        }
+
+        loadDashboard();
+    </script>
+
+</body>
+
+</html>

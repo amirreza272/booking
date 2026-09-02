@@ -1,0 +1,5 @@
+2026-08-09T08:44:09.687077 — خطا در نوشتن روی گوگل شیت: Unable to load PEM file. See https://cryptography.io/en/latest/faq/#why-can-t-i-import-my-pem-file for more details. MalformedFraming
+2026-08-13T22:53:36.207450 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (16:00 در 2026-08-16) باید دستی توی شیت اصلاح بشه
+2026-08-13T23:27:04.047583 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:2437)')))
+2026-08-16T21:47:28.087878 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-08-17) باید دستی توی شیت اصلاح بشه
+2026-08-30T11:43:19.291367 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='oauth2.googleapis.com', port=443): Read timed out. (read timeout=120)

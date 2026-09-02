@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ورود پنل مدیریت</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; background:#f0f2f5; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+        .box { background:white; padding:32px; border-radius:12px; box-shadow:0 2px 20px rgba(0,0,0,.1); width:300px; }
+        input { width:100%; padding:10px; margin-top:8px; margin-bottom:16px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; }
+        button { width:100%; padding:10px; background:#1a7f6e; color:white; border:none; border-radius:6px; cursor:pointer; font-size:15px; }
+        #err { color:#c0392b; font-size:13px; margin-top:8px; text-align:center; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3>ورود به پنل مدیریت</h3>
+        <label>رمز عبور</label>
+        <input type="password" id="password">
+        <button onclick="doLogin()">ورود</button>
+        <div id="err"></div>
+    </div>
+    <script>
+        function doLogin() {
+            const errBox = document.getElementById('err');
+            errBox.textContent = '';
+        
+            fetch(window.location.pathname, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: document.getElementById('password').value })
+            })
+            .then(async r => {
+                const text = await r.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(`پاسخ سرور JSON نبود (status ${r.status}): ${text.slice(0, 300)}`);
+                }
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    errBox.textContent = data.message || 'خطای نامشخص';
+                }
+            })
+            .catch(err => {
+                errBox.textContent = 'خطا: ' + err.message;
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>

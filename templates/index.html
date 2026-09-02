@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رزرو نوبت کلینیک مسیر</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://masircenter.com/booking/static/style.css">
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <!-- Header -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-mark">م</span>
+                <div>
+                    <strong>کلینیک مسیر</strong>
+                    <small>رزرو آنلاین جلسه مشاوره</small>
+                </div>
+            </div>
+            <div class="header-badge">
+                <span class="dot"></span> پذیرش آنلاین فعال است
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Step indicator -->
+        <div class="steps">
+            <div class="step active" id="step-dot-1">
+                <div class="step-num">۱</div>
+                <span>نوع جلسه</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" id="step-dot-2">
+                <div class="step-num">۲</div>
+                <span>تاریخ و ساعت</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" id="step-dot-3">
+                <div class="step-num">۳</div>
+                <span>اطلاعات شما</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" id="step-dot-4">
+                <div class="step-num">۴</div>
+                <span>پرداخت</span>
+            </div>
+        </div>
+
+        <div class="booking-container">
+
+            <!-- === STEP 1: Session type === -->
+            <section class="card" id="step-1">
+                <h2 class="card-title">نوع جلسه را انتخاب کنید</h2>
+                <p class="card-subtitle">هر جلسه ۵۰ دقیقه</p>
+
+                <div class="session-grid">
+                    <label class="session-card" id="card-online">
+                        <input type="radio" name="session_type" value="online">
+                        <div class="session-icon">💻</div>
+                        <strong>آنلاین</strong>
+                        <span>از طریق تماس تصویری</span>
+                    </label>
+                    <label class="session-card" id="card-inperson">
+                        <input type="radio" name="session_type" value="inperson">
+                        <div class="session-icon">🏥</div>
+                        <strong>حضوری</strong>
+                        <span>در مطب کلینیک مسیر</span>
+                    </label>
+                </div>
+
+                <div class="notice" id="inperson-notice" style="display:none">
+                    📍 آدرس مطب بعد از ثبت نوبت ارسال می‌شود.
+                </div>
+
+                <button class="btn-primary" id="btn-step1" disabled onclick="goToStep(2)">
+                    ادامه
+                </button>
+            </section>
+
+            <!-- === STEP 2: Date & time === -->
+            <section class="card hidden" id="step-2">
+                <h2 class="card-title">تاریخ و ساعت</h2>
+
+                <!-- Calendar -->
+                <div class="calendar-wrap">
+                    <div class="cal-nav">
+                        <button class="cal-arrow" id="btn-prev-month" onclick="changeMonth(-1)">‹</button>
+                        <span class="cal-month-label" id="cal-month-label"></span>
+                        <button class="cal-arrow" id="btn-next-month" onclick="changeMonth(1)">›</button>
+                    </div>
+                    <div class="cal-days-header">
+                        <span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span>
+                    </div>
+                    <div class="cal-grid" id="cal-grid"></div>
+                </div>
+
+                <!-- Time slots -->
+                <div class="slots-wrap" id="slots-wrap" style="display:none">
+                    <h3 class="slots-title">ساعت مناسب را انتخاب کنید</h3>
+                    <div class="slots-grid" id="slots-grid"></div>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn-secondary" onclick="goToStep(1)">برگشت</button>
+                    <button class="btn-primary" id="btn-step2" disabled onclick="goToStep(3)">ادامه</button>
+                </div>
+            </section>
+
+            <!-- === STEP 3: User info === -->
+            <section class="card hidden" id="step-3">
+                <h2 class="card-title">اطلاعات شما</h2>
+
+                <div class="booking-summary" id="booking-summary-top"></div>
+
+                <div class="form-group">
+                    <label>نام و نام خانوادگی <span class="req">*</span></label>
+                    <input type="text" id="input-name" oninput="validateStep3()">
+                </div>
+                <div class="form-group">
+                    <label>شماره موبایل <span class="req">*</span></label>
+                    <input type="tel" id="input-phone" maxlength="11" oninput="validateStep3()">
+                </div>
+                <div class="form-group">
+                    <label>توضیحات (اختیاری)</label>
+                    <textarea id="input-notes" rows="3"></textarea>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn-secondary" onclick="goToStep(2)">برگشت</button>
+                    <button class="btn-primary" id="btn-step3" disabled onclick="goToStep(4)">ادامه</button>
+                </div>
+            </section>
+
+            <!-- === STEP 4: Payment === -->
+            <section class="card hidden" id="step-4">
+                <h2 class="card-title">تأیید و پرداخت</h2>
+
+                <div class="final-summary" id="final-summary"></div>
+
+                <div class="price-box" id="price-box">
+                    <span>مبلغ قابل پرداخت</span>
+                    <strong id="price-label">—</strong>
+                </div>
+
+                <div class="notice">
+                    🔒 پرداخت امن از طریق درگاه زرین‌پال
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn-secondary" onclick="goToStep(3)">برگشت</button>
+                    <button class="btn-pay" id="btn-pay" onclick="submitBooking()">
+                        پرداخت و ثبت نوبت
+                    </button>
+                </div>
+            </section>
+
+            <!-- === SUCCESS === -->
+            <section class="card hidden" id="step-success">
+                <div class="result-icon">✅</div>
+                <h2 class="result-title">نوبت شما با موفقیت ثبت شد</h2>
+                <p class="result-subtitle">منتظر تماس تیم کلینیک مسیر باشید</p>
+                <div class="result-summary" id="success-summary"></div>
+                <div class="notice" style="text-align:center; margin-bottom:20px">
+                    📞 در صورت نیاز به تغییر نوبت با ما تماس بگیرید
+                    <br><strong>۰۹۰۱۷۶۴۴۶۷۸</strong>
+                </div>
+                <button class="btn-primary" onclick="location.reload()">رزرو نوبت جدید</button>
+            </section>
+
+            <!-- === FAILURE === -->
+            <section class="card hidden" id="step-failed">
+                <div class="result-icon">❌</div>
+                <h2 class="result-title">پرداخت ناموفق بود</h2>
+                <p class="result-subtitle">مبلغی از حساب شما کسر نشده است</p>
+                <div class="notice" style="background:#fff0f0; border-color:#f0aaaa; color:#a94442; margin-bottom:24px">
+                    ⚠️ <span id="fail-reason">پرداخت لغو شد یا با خطا مواجه شد.</span>
+                </div>
+                <button class="btn-primary" onclick="retryPayment()" style="margin-bottom:12px">
+                    تلاش دوباره
+                </button>
+                <div class="fail-divider">یا</div>
+                <a class="btn-phone" href="tel:09017644678">
+                    📞 رزرو تلفنی &mdash; ۰۹۰۱۷۶۴۴۶۷۸
+                </a>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <p>کلینیک مسیر · پشتیبانی: ۰۹۱۲۰۰۰۰۰۰۰</p>
+    </footer>
+
+</div>
+
+<script>
+    // آدرس پایه پروژه — از Flask تزریق می‌شود
+    // اگر روی /booking باشد: BASE = '/booking'
+    // اگر روی / باشد: BASE = ''
+    window.APP_BASE = "{{ request.script_root }}";
+</script>
+<script src="{{ url_for('static', filename='jalaali.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
