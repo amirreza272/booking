@@ -59,7 +59,7 @@
             <!-- === STEP 1: Session type === -->
             <section class="card" id="step-1">
                 <h2 class="card-title">نوع جلسه را انتخاب کنید</h2>
-                <p class="card-subtitle">هر جلسه ۵۰ دقیقه</p>
+                <p class="card-subtitle">هر جلسه ۴۵ - ۶۰ دقیقه</p>
 
                 <div class="session-grid">
                     <label class="session-card" id="card-online">
@@ -76,15 +76,26 @@
                     </label>
                 </div>
 
-                <div class="notice" id="inperson-notice" style="display:none">
-                    📍 آدرس مطب بعد از ثبت نوبت ارسال می‌شود.
+                <div id="format-section" class="hidden">
+                    <p class="card-subtitle" style="margin-bottom:12px">نوع مراجعه</p>
+                    <div class="session-grid">
+                        <label class="session-card" id="card-individual">
+                            <input type="radio" name="session_format" value="individual">
+                            <div class="session-icon">🤵</div>
+                            <strong>فردی</strong>
+                        </label>
+                        <label class="session-card" id="card-couple">
+                            <input type="radio" name="session_format" value="couple">
+                            <div class="session-icon">👫</div>
+                            <strong>زوجی</strong>
+                        </label>
+                    </div>
                 </div>
 
                 <button class="btn-primary" id="btn-step1" disabled onclick="goToStep(2)">
                     ادامه
                 </button>
             </section>
-
             <!-- === STEP 2: Date & time === -->
             <section class="card hidden" id="step-2">
                 <h2 class="card-title">تاریخ و ساعت</h2>
@@ -168,9 +179,10 @@
                 <h2 class="result-title">نوبت شما با موفقیت ثبت شد</h2>
                 <p class="result-subtitle">منتظر تماس تیم کلینیک مسیر باشید</p>
                 <div class="result-summary" id="success-summary"></div>
+                <div id="success-session-info"></div>
                 <div class="notice" style="text-align:center; margin-bottom:20px">
                     📞 در صورت نیاز به تغییر نوبت با ما تماس بگیرید
-                    <br><strong>۰۹۰۱۷۶۴۴۶۷۸</strong>
+                    <br><strong>۰۹۰۱۷۶۴۴۶۷۸ - ۰۹۱۹۴۰۵۶۹۳۸</strong>
                 </div>
                 <button class="btn-primary" onclick="location.reload()">رزرو نوبت جدید</button>
             </section>
@@ -196,15 +208,12 @@
     </main>
 
     <footer class="site-footer">
-        <p>کلینیک مسیر · پشتیبانی: ۰۹۱۲۰۰۰۰۰۰۰</p>
+        <p>کلینیک مسیر · پشتیبانی: ۰۹۰۱۷۶۴۴۶۷۸</p>
     </footer>
 
 </div>
 
 <script>
-    // آدرس پایه پروژه — از Flask تزریق می‌شود
-    // اگر روی /booking باشد: BASE = '/booking'
-    // اگر روی / باشد: BASE = ''
     window.APP_BASE = "{{ request.script_root }}";
 </script>
 <script src="{{ url_for('static', filename='jalaali.js') }}"></script>

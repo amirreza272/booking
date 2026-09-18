@@ -75,6 +75,8 @@ def _write_standard(appointment, month_name, row_num):
 
     time_offset = AVAILABLE_TIMES.index(appointment.time)
     session_label = "آنلاین" if appointment.session_type == "online" else "حضوری"
+    if getattr(appointment, "session_format", "individual") == "couple":
+        session_label += " (زوجی)"
 
     values = [
         str(time_offset + 1),
@@ -107,10 +109,12 @@ def _find_free_buffer_row(worksheet, j_date):
 
 def _write_extra(appointment, month_name, j_date):
     worksheet = _get_spreadsheet().worksheet(month_name)
-
+    
     session_label = "آنلاین" if appointment.session_type == "online" else (
         "حضوری" if appointment.session_type == "inperson" else "—"
     )
+    if getattr(appointment, "session_format", "individual") == "couple":
+        session_label += " (زوجی)"
 
     row_num = _find_free_buffer_row(worksheet, j_date)
 

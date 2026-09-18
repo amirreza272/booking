@@ -139,6 +139,8 @@ body {
 
 .hidden { display: none !important; }
 
+#format-section { margin-top: 4px; margin-bottom: 20px; }
+
 /* ===================== SESSION TYPE ===================== */
 .session-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px;

@@ -49,6 +49,8 @@
             color: var(--ink);
         }
 
+        h5 { margin: 0 0 8px; font-size: 13px; color: var(--ink); }
+
         .app-shell {
             display: flex;
             min-height: 100vh;
@@ -325,8 +327,6 @@
             margin-bottom: 16px;
         }
 
-        .block-form h5 { margin: 0 0 8px; font-size: 13px; color: var(--ink); }
-
         .block-form label {
             display: block;
             font-size: 11px;
@@ -335,7 +335,7 @@
             margin-bottom: 3px;
         }
 
-        .block-form input {
+        .block-form input, .block-form textarea {
             width: 100%;
             padding: 7px;
             border: 1px solid var(--border);
@@ -445,6 +445,16 @@
             font-size: 13px;
         }
 
+        .hint-banner {
+            background: var(--teal-bg);
+            border: 1px solid rgba(26,127,110,.2);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--teal-dark);
+            margin-bottom: 14px;
+        }
+
         @media (max-width: 760px) {
             .app-shell { flex-direction: column; }
 
@@ -482,6 +492,7 @@
             <nav class="side-nav">
                 <button class="tab-btn active" data-tab="dashboard"><span class="ic">📊</span> داشبورد</button>
                 <button class="tab-btn" data-tab="calendar"><span class="ic">🗓️</span> تقویم</button>
+                <button class="tab-btn" data-tab="pending"><span class="ic">⏳</span> نیاز به رزرو دستی</button>
                 <button class="tab-btn" data-tab="appointments"><span class="ic">📋</span> نوبت‌ها</button>
                 <button class="tab-btn" data-tab="customers"><span class="ic">🎗️</span> باشگاه مشتریان</button>
                 <button class="tab-btn" data-tab="finance"><span class="ic">💰</span> مالی</button>
@@ -524,7 +535,23 @@
                 </div>
             </div>
 
+            <div class="tab" id="tab-pending">
+                <p style="color:var(--ink-muted); font-size:12px; margin-bottom:12px;">
+                    این نوبت‌ها چون هفته‌ی قبلشون تشکیل شده ولی همون ساعت هفته‌ی بعد قبلاً پر بوده، خودکار رزرو نشدن —
+                    باید دستی (از تب «نوبت‌ها» → ثبت دستی) براشون یه ساعت جایگزین پیدا کنی، بعد این ردیف رو «انجام شد» بزن.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>نام</th><th>موبایل</th><th>تاریخ موردنظر</th><th>ساعت</th><th>نوع</th><th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-body"></tbody>
+                </table>
+            </div>
+
             <div class="tab" id="tab-appointments">
+                <div class="hint-banner" id="appt-mode-banner"></div>
                 <div class="filters">
                     <input type="date" id="f-from">
                     <input type="date" id="f-to">
@@ -535,8 +562,10 @@
                         <option value="cancel">کنسل‌شده</option>
                         <option value="blocked">مسدود</option>
                     </select>
-                    <input type="text" id="f-search" placeholder="جستجو با نام یا موبایل">
+                    <input type="text" id="f-search" placeholder="جستجو با نام یا موبایل (در کل تاریخچه)">
                     <button class="primary" onclick="loadAppointments()">فیلتر</button>
+                    <button class="action" onclick="showRecentAppointments()">نمایش اخیر (پیش‌فرض)</button>
+                    <button class="action" onclick="showArchiveAppointments()">📦 نمایش بایگانی (قدیمی‌تر)</button>
                     <button class="action" onclick="openManualModal()">+ ثبت دستی نوبت</button>
                 </div>
                 <table>
@@ -585,6 +614,18 @@
             </div>
 
             <div class="tab" id="tab-sms">
+                <div class="block-form" style="margin-bottom:20px;">
+                    <h5>✍️ ارسال پیامک دستی</h5>
+                    <label>شماره‌ها (با کاما یا خط جدید جدا کن — می‌تونی چندتا بفرستی)</label>
+                    <textarea id="sms-send-phones" rows="2" placeholder="09121234567, 09123456789"></textarea>
+                    <label>متن پیامک</label>
+                    <textarea id="sms-send-text" rows="3" placeholder="متن پیامک..."></textarea>
+                    <p style="font-size:10.5px; color:var(--ink-muted); margin-top:4px;">
+                        عبارت «لغو ۱۱» طبق الزام خط پیامکی، خودکار به انتهای پیام اضافه می‌شه.
+                    </p>
+                    <div id="sms-send-err" style="color:var(--danger); font-size:12px; margin-top:6px;"></div>
+                    <button class="primary" style="margin-top:9px;" onclick="sendManualSms()">ارسال پیامک</button>
+                </div>
                 <div class="filters">
                     <label style="font-size:13px; display:flex; align-items:center; gap:6px;">
                         <input type="checkbox" id="sms-only-failed" onchange="loadSmsLogs()">
@@ -592,9 +633,6 @@
                     </label>
                     <button class="action" onclick="loadSmsLogs()">تازه‌سازی</button>
                 </div>
-                <p style="color:var(--ink-muted); font-size:12px; margin-bottom:12px;">
-                    خط پیامک هنوز فعال نشده — این جدول از همون لحظه‌ای که خط وصل بشه پر می‌شه.
-                </p>
                 <table>
                     <thead><tr><th>تاریخ</th><th>شماره</th><th>متن</th><th>وضعیت</th><th>خطا</th></tr></thead>
                     <tbody id="sms-body"></tbody>
@@ -627,6 +665,11 @@
                 <option value="online">آنلاین</option>
                 <option value="inperson">حضوری</option>
                 <option value="blocked">مسدود</option>
+            </select>
+            <label>نوع مراجعه</label>
+            <select id="ed-format">
+                <option value="individual">فردی</option>
+                <option value="couple">زوجی</option>
             </select>
             <label>وضعیت پرداخت</label>
             <select id="ed-status">
@@ -671,6 +714,11 @@
                 <option value="online">آنلاین</option>
                 <option value="inperson">حضوری</option>
             </select>
+            <label>نوع مراجعه</label>
+            <select id="m-format">
+                <option value="individual">فردی</option>
+                <option value="couple">زوجی</option>
+            </select>
             <label>یادداشت</label><textarea id="m-notes" rows="2"></textarea>
             <div id="m-err" style="color:var(--danger); font-size:12px;"></div>
             <div class="actions">
@@ -712,6 +760,11 @@
             blocked: { label: 'مسدود', icon: '🔒' },
         };
 
+        // آستانه‌ی «بایگانی» — نوبت‌های قدیمی‌تر از این چند روز، توی حالت
+        // پیش‌فرض تب «نوبت‌ها» نمایش داده نمی‌شن (طبق درخواست، حدود یک هفته).
+        const ARCHIVE_THRESHOLD_DAYS = 7;
+        const APPT_LIST_LIMIT = 500;
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -720,7 +773,16 @@
                 document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
                 if (btn.dataset.tab === 'dashboard') loadDashboard();
                 if (btn.dataset.tab === 'calendar') loadCalendar();
-                if (btn.dataset.tab === 'appointments') loadAppointments();
+                if (btn.dataset.tab === 'pending') loadPendingRebookings();
+                if (btn.dataset.tab === 'appointments') {
+                    // فقط بار اول ورود به تب، بازه‌ی پیش‌فرض رو ست کن —
+                    // اگه کاربر قبلاً فیلتر دستی زده، دست‌نخورده می‌مونه.
+                    if (!document.getElementById('f-from').value && !document.getElementById('f-to').value) {
+                        showRecentAppointments();
+                    } else {
+                        loadAppointments();
+                    }
+                }
                 if (btn.dataset.tab === 'customers') loadCustomers();
                 if (btn.dataset.tab === 'finance') loadFinance();
                 if (btn.dataset.tab === 'sms') loadSmsLogs();
@@ -889,10 +951,17 @@
                     side.innerHTML = `
                         <div class="block-form">
                             <h5>🔒 مسدودسازی ${label}</h5>
-                            <label>ساعت</label>
-                            <input type="time" id="block-time">
-                            <div class="quick-times" id="block-quick-times"></div>
-                            <label>دلیل (اختیاری)</label>
+                            <label>ساعت‌ها (می‌تونی چندتا انتخاب کنی)</label>
+                            <div class="quick-times" id="block-multi-times">
+                                ${STANDARD_TIMES.map(t => `
+                                    <label style="display:inline-flex; align-items:center; gap:3px; margin:2px 6px 2px 0; font-size:11.5px;">
+                                        <input type="checkbox" value="${t}" class="block-time-cb"> ${t}
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <label>ساعت دلخواه دیگر (اختیاری)</label>
+                            <input type="time" id="block-custom-time">
+                            <label>دلیل (اختیاری — برای همه‌ی ساعات انتخابی)</label>
                             <input type="text" id="block-reason" placeholder="مثلاً قرار شخصی خانم دکتر">
                             <div id="block-err" style="color:var(--danger); font-size:11px; margin-top:6px;"></div>
                             <button class="primary" style="margin-top:9px; width:100%;" onclick="submitBlock('${dateStr}', ${jDay})">مسدود کن</button>
@@ -900,29 +969,34 @@
                         <b>${label}</b>
                         ${itemsHtml}
                     `;
-                    renderQuickTimes('block-quick-times', 'block-time');
                 });
         }
 
         function submitBlock(dateStr, jDay) {
-            const time = document.getElementById('block-time').value;
+            const checked = Array.from(document.querySelectorAll('.block-time-cb:checked')).map(cb => cb.value);
+            const customTime = document.getElementById('block-custom-time').value;
+            if (customTime) checked.push(customTime);
+
             const reason = document.getElementById('block-reason').value.trim();
             const errBox = document.getElementById('block-err');
             errBox.textContent = '';
 
-            if (!time) {
-                errBox.textContent = 'ساعت را انتخاب کن';
+            if (!checked.length) {
+                errBox.textContent = 'حداقل یک ساعت را انتخاب کن';
                 return;
             }
 
             fetch(`${API}/api/appointments/block`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date: dateStr, time, reason }),
+                body: JSON.stringify({ date: dateStr, times: checked, reason }),
             })
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
+                        if (res.errors && res.errors.length) {
+                            errBox.textContent = 'بعضی ساعات مسدود نشدن: ' + res.errors.join(' | ');
+                        }
                         loadCalendar();
                         loadDashboard();
                         showDayDetail(dateStr, jDay);
@@ -942,19 +1016,78 @@
                 });
         }
 
+        // ───────── نوبت‌های معلق (نیاز به رزرو دستی) ─────────
+
+        function loadPendingRebookings() {
+            fetch(`${API}/api/pending-rebookings`).then(r => r.json()).then(items => {
+                document.getElementById('pending-body').innerHTML = items.map(p => `
+                    <tr>
+                        <td>${p.name}</td><td>${p.phone}</td><td>${p.target_date}</td><td>${p.time}</td>
+                        <td>${typeLabel(p.session_type)}${p.session_format === 'couple' ? ' (زوجی)' : ''}</td>
+                        <td><button class="action" onclick="resolvePending(${p.id})">انجام شد</button></td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" class="empty-hint">چیزی برای رزرو دستی نمونده 🎉</td></tr>';
+            });
+        }
+
+        function resolvePending(id) {
+            if (!confirm('این مورد رو دستی رزرو کردی و می‌خوای از لیست پاک بشه؟')) return;
+            fetch(`${API}/api/pending-rebookings/${id}/resolve`, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => { if (res.success) loadPendingRebookings(); });
+        }
+
+        // ───────── تب «نوبت‌ها» — بازه‌ی پیش‌فرض («اخیر») در برابر «بایگانی» ─────────
+        // چون فهرست نوبت‌ها با گذشت زمان طولانی می‌شه، پیش‌فرض فقط یک بازه‌ی
+        // منطقی (هفته‌ی گذشته تا چند ماه آینده) نشون داده می‌شه. دکمه‌ی
+        // «بایگانی» فیلتر رو می‌بره روی نوبت‌های قدیمی‌تر از همون آستانه.
+        // جستجو (نام/موبایل) همیشه مستقل از این بازه، در کل تاریخچه کار می‌کنه.
+
+        function showRecentAppointments() {
+            const today = new Date();
+            const from = new Date(Date.now() - ARCHIVE_THRESHOLD_DAYS * 86400000);
+            const to = new Date(Date.now() + 180 * 86400000);
+            document.getElementById('f-from').value = fmtDate(from);
+            document.getElementById('f-to').value = fmtDate(to);
+            document.getElementById('f-status').value = '';
+            document.getElementById('f-search').value = '';
+            document.getElementById('appt-mode-banner').textContent =
+                `نمایش نوبت‌های ${ARCHIVE_THRESHOLD_DAYS} روز گذشته تا ۶ ماه آینده. برای دیدن قدیمی‌ترها، «نمایش بایگانی» رو بزن یا با نام/موبایل جستجو کن.`;
+            loadAppointments();
+        }
+
+        function showArchiveAppointments() {
+            const cutoff = new Date(Date.now() - ARCHIVE_THRESHOLD_DAYS * 86400000);
+            document.getElementById('f-from').value = '';
+            document.getElementById('f-to').value = fmtDate(cutoff);
+            document.getElementById('f-status').value = '';
+            document.getElementById('appt-mode-banner').textContent =
+                `📦 بایگانی — نوبت‌های قدیمی‌تر از ${ARCHIVE_THRESHOLD_DAYS} روز پیش (حداکثر ${APPT_LIST_LIMIT} مورد آخر). برای بازگشت، «نمایش اخیر» رو بزن.`;
+            loadAppointments();
+        }
+
         function loadAppointments() {
             const from = document.getElementById('f-from').value;
             const to = document.getElementById('f-to').value;
             const status = document.getElementById('f-status').value;
             const q = document.getElementById('f-search').value.trim();
 
-            let url = `${API}/api/appointments?`;
+            let url = `${API}/api/appointments?limit=${APPT_LIST_LIMIT}&`;
             if (from) url += `from=${from}&`;
             if (to) url += `to=${to}&`;
             if (status) url += `status=${status}&`;
-            if (q) url += `q=${encodeURIComponent(q)}&`;
+            if (q) {
+                // جستجو مستقل از بازه‌ی تاریخ — کل تاریخچه رو می‌گرده
+                url = `${API}/api/appointments?limit=${APPT_LIST_LIMIT}&q=${encodeURIComponent(q)}&`;
+                if (status) url += `status=${status}&`;
+                document.getElementById('appt-mode-banner').textContent = `نتایج جستجو برای «${q}» در کل تاریخچه.`;
+            }
 
             fetch(url).then(r => r.json()).then(items => {
+                if (items.length >= APPT_LIST_LIMIT) {
+                    const banner = document.getElementById('appt-mode-banner');
+                    banner.textContent += ` ⚠️ فقط ${APPT_LIST_LIMIT} مورد نمایش داده شده — بازه یا جستجو رو محدودتر کن.`;
+                }
                 document.getElementById('appt-body').innerHTML = items.map(a => `
             <tr class="${isPastAppointment(a) ? 'past-row' : ''}">
                 <td>${a.date}</td><td>${a.time}</td><td>${a.name}</td><td>${a.phone === '-' ? '—' : a.phone}</td>
@@ -977,9 +1110,6 @@
         // نوبتی که زمانش گذشته، وضعیتش «کنسل» نیست، و یادداشتی هم نداره —
         // کم‌رنگ می‌شه که بفهمیم تشکیل شده و دیگه نیاز به توجه نداره.
         function isPastAppointment(a) {
-            // فقط یادداشت باعث پررنگ‌موندن می‌شه؛ کنسل‌شدن باعث پررنگ‌موندن
-            // نمی‌شه — نوبت کنسل‌شده‌ی گذشته هم باید کم‌رنگ باشه (بجه‌ش
-            // خودش وضعیتش رو نشون می‌ده، نیازی به توجه اضافه نداره).
             if (a.notes && a.notes.trim()) return false;
             try {
                 const dt = new Date(`${a.date}T${a.time}:00`);
@@ -1075,6 +1205,7 @@
             fillJalaliDatePicker('ed', a.date);
             document.getElementById('ed-time').value = a.time;
             document.getElementById('ed-type').value = a.session_type;
+            document.getElementById('ed-format').value = a.session_format || 'individual';
             document.getElementById('ed-status').value = a.payment_status;
             document.getElementById('ed-notes').value = a.notes || '';
             document.getElementById('ed-err').textContent = '';
@@ -1090,6 +1221,7 @@
                 date: getGregDateFromPicker('ed'),
                 time: document.getElementById('ed-time').value,
                 session_type: document.getElementById('ed-type').value,
+                session_format: document.getElementById('ed-format').value,
                 payment_status: document.getElementById('ed-status').value,
                 notes: document.getElementById('ed-notes').value,
             };
@@ -1155,6 +1287,7 @@
             document.getElementById('m-err').textContent = '';
             document.getElementById('m-customer-search').value = '';
             document.getElementById('m-customer-suggestions').innerHTML = '';
+            document.getElementById('m-format').value = 'individual';
             fillJalaliDatePicker('m');
             renderQuickTimes('m-quick-times', 'm-time');
             document.getElementById('manual-modal').classList.add('active');
@@ -1167,6 +1300,7 @@
                 date: getGregDateFromPicker('m'),
                 time: document.getElementById('m-time').value,
                 session_type: document.getElementById('m-type').value,
+                session_format: document.getElementById('m-format').value,
                 notes: document.getElementById('m-notes').value,
             };
             fetch(`${API}/api/appointments/manual`, {
@@ -1324,7 +1458,10 @@
             <tr>
                 <td>${d.name}</td><td>${d.phone === '-' ? '—' : d.phone}</td><td>${d.sessions}</td>
                 <td>${(d.total_debt / 10).toLocaleString()}</td>
-                <td><button class="action gold" onclick='settleDebt(${JSON.stringify(d.appointment_ids)})'>تسویه شد</button></td>
+                <td>
+                    <button class="action gold" onclick='settleDebt(${JSON.stringify(d.appointment_ids)})'>تسویه شد</button>
+                    <button class="action" onclick='remindDebt(${JSON.stringify(d.phone)}, ${JSON.stringify(d.name)}, ${Math.round(d.total_debt / 10)})'>🔔 یادآوری</button>
+                </td>
             </tr>
         `).join('') || '<tr><td colspan="5" class="empty-hint">طلبی ثبت‌نشده</td></tr>';
             });
@@ -1344,6 +1481,22 @@
                 });
         }
 
+        function remindDebt(phone, name, amountToman) {
+            if (!phone || phone === '-') { alert('این مراجع شماره تماس ثبت‌شده ندارد'); return; }
+            if (!confirm(`پیامک یادآوری بدهی (${amountToman.toLocaleString()} تومان) به ${name} (${phone}) ارسال بشه؟`)) return;
+
+            fetch(`${API}/api/clients/remind-debt`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, name, amount: amountToman }),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) { alert('پیامک یادآوری ارسال شد'); loadSmsLogs(); }
+                    else alert(res.message || 'خطا در ارسال پیامک');
+                });
+        }
+
         function loadSmsLogs() {
             const onlyFailed = document.getElementById('sms-only-failed').checked;
             fetch(`${API}/api/sms-logs${onlyFailed ? '?failed=1' : ''}`)
@@ -1358,6 +1511,35 @@
                     <td>${s.error || ''}</td>
                 </tr>
             `).join('') || '<tr><td colspan="5" class="empty-hint">هنوز پیامکی ارسال نشده</td></tr>';
+                });
+        }
+
+        function sendManualSms() {
+            const phones = document.getElementById('sms-send-phones').value.trim();
+            const text = document.getElementById('sms-send-text').value.trim();
+            const errBox = document.getElementById('sms-send-err');
+            errBox.textContent = '';
+
+            if (!phones || !text) {
+                errBox.textContent = 'شماره و متن پیامک را وارد کن';
+                return;
+            }
+            if (!confirm('پیامک ارسال شود؟ (هزینه دارد)')) return;
+
+            fetch(`${API}/api/sms/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phones, message: text }),
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        document.getElementById('sms-send-phones').value = '';
+                        document.getElementById('sms-send-text').value = '';
+                        loadSmsLogs();
+                    } else {
+                        errBox.textContent = res.message || 'خطا در ارسال';
+                    }
                 });
         }
 

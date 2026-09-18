@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پرداخت نوبت — کلینیک مسیر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://masircenter.com/booking/static/style.css">
+</head>
+<body>
+<div class="page-wrap">
+    <main class="main">
+        <section class="card">
+            <h2 class="card-title">پرداخت نوبت</h2>
+
+            {% if appointment.payment_status == 'paid' %}
+                <div class="result-icon">✅</div>
+                <p class="result-title">این نوبت قبلاً پرداخت شده</p>
+                <div class="final-summary" style="margin-top:16px">
+                    <div class="row"><span class="label">تاریخ</span><span class="val">{{ jalali_str }}</span></div>
+                    <div class="row"><span class="label">ساعت</span><span class="val">{{ appointment.time }}</span></div>
+                    <div class="row"><span class="label">نوع</span><span class="val">{{ type_fa }} — {{ format_fa }}</span></div>
+                </div>
+
+                {% if appointment.session_type == 'online' %}
+                    <div class="notice" style="margin-top:16px">💻 لینک ورود به جلسه:</div>
+                    <a class="btn-phone" href="{{ session_link }}" target="_blank" rel="noopener">🔗 ورود به جلسه آنلاین</a>
+                {% else %}
+                    <div class="notice" style="margin-top:16px; text-align:right">📍 آدرس مطب:<br><strong>{{ clinic_address }}</strong></div>
+                {% endif %}
+
+            {% elif appointment.payment_status == 'not' %}
+                <div class="final-summary">
+                    <div class="row"><span class="label">تاریخ</span><span class="val">{{ jalali_str }}</span></div>
+                    <div class="row"><span class="label">ساعت</span><span class="val">{{ appointment.time }}</span></div>
+                    <div class="row"><span class="label">نوع</span><span class="val">{{ type_fa }} — {{ format_fa }}</span></div>
+                </div>
+                <div class="price-box">
+                    <span>مبلغ قابل پرداخت</span>
+                    <strong>{{ amount_toman }} تومان</strong>
+                </div>
+                <div id="pay-err" style="color:#c0392b; font-size:13px; margin-bottom:10px;"></div>
+                <button class="btn-pay" style="width:100%" onclick="startPay()">پرداخت</button>
+
+            {% else %}
+                <p style="text-align:center; color:var(--text-muted)">این نوبت معتبر نیست یا کنسل شده است.</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer class="site-footer"><p>کلینیک مسیر · پشتیبانی: ۰۹۱۲۰۰۰۰۰۰۰</p></footer>
+</div>
+
+<script>
+function startPay() {
+    const btn = document.querySelector('.btn-pay');
+    const errBox = document.getElementById('pay-err');
+    if (btn) { btn.disabled = true; btn.textContent = 'در حال اتصال...'; }
+    fetch('/booking/api/payment/token/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: "{{ appointment.payment_token }}" }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.payment_url) {
+            window.location.href = data.payment_url;
+        } else {
+            errBox.textContent = data.message || 'خطایی رخ داد';
+            if (btn) { btn.disabled = false; btn.textContent = 'پرداخت'; }
+        }
+    })
+    .catch(() => {
+        errBox.textContent = 'خطا در اتصال به سرور';
+        if (btn) { btn.disabled = false; btn.textContent = 'پرداخت'; }
+    });
+}
+</script>
+</body>
+</html>

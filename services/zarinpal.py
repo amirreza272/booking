@@ -2,8 +2,12 @@ import requests
 from config import Config
 
 MERCHANT_ID      = "38c7a109-8115-4090-bfb1-021b481a6926"
-AMOUNT_ONLINE    = 8500000
-AMOUNT_INPERSON  = 8000000
+
+# ─── قیمت‌گذاری (ریال) — پایه + سورشارژهای مستقل ────────
+BASE_AMOUNT      = 8000000   # ۸۰۰٬۰۰۰ تومان — حضوری + فردی
+ONLINE_SURCHARGE = 500000    # ۵۰٬۰۰۰ تومان اضافه برای آنلاین
+COUPLE_SURCHARGE = 500000    # ۵۰٬۰۰۰ تومان اضافه برای زوجی
+
 CALLBACK_URL     = "https://masircenter.com/booking/api/payment/callback"
 
 # ─── سوییچ sandbox / production ────────────────────────
@@ -15,17 +19,23 @@ ZARINPAL_VERIFY  = f"https://{_API_DOMAIN}/pg/v4/payment/verify.json"
 ZARINPAL_START   = f"https://{_START_DOMAIN}/pg/StartPay/"
 
 
-def get_amount(session_type):
-    return AMOUNT_ONLINE if session_type == "online" else AMOUNT_INPERSON
+def get_amount(session_type, session_format="individual"):
+    amount = BASE_AMOUNT
+    if session_type == "online":
+        amount += ONLINE_SURCHARGE
+    if session_format == "couple":
+        amount += COUPLE_SURCHARGE
+    return amount
 
 
-def request_payment(description, session_type):
-    amount = get_amount(session_type)
+def request_payment(description, session_type, session_format="individual", callback_url=None):
+    amount = get_amount(session_type, session_format)
+    cb_url = callback_url or CALLBACK_URL
     try:
         resp = requests.post(ZARINPAL_REQUEST, json={
             "merchant_id":  MERCHANT_ID,
             "amount":       amount,
-            "callback_url": CALLBACK_URL,
+            "callback_url": cb_url,
             "description":  description,
         }, timeout=10)
 

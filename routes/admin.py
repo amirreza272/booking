@@ -4,7 +4,7 @@ from werkzeug.security import check_password_hash
 from sqlalchemy import or_
 
 from extensions import db
-from models import Appointment, SmsLog, Customer
+from models import Appointment, SmsLog, Customer, PendingRebooking, generate_payment_token
 from config import Config
 from services.booking import validate_admin_booking
 from services.zarinpal import get_amount
@@ -12,6 +12,7 @@ from services.gsheet import write_appointment, update_status, clear_appointment_
 from services.gsheet_customers import upsert_customer, delete_customer_row
 from services.customers import ensure_customer_exists
 from services.customers_import import import_customers_from_excel
+from services.sms import send_sms
 
 import traceback
 import os
@@ -116,10 +117,19 @@ def api_get_appointment(username, appointment_id):
 @admin_bp.route("/<username>/api/appointments")
 @require_admin
 def api_list_appointments(username):
+    """
+    برای جلوگیری از سنگین‌شدن لیست با گذشت زمان، یک سقف پیش‌فرض (limit) روی
+    تعداد نتایج گذاشته شده. فرانت‌اند برای «نوبت‌ها» یک بازه‌ی تاریخی منطقی
+    (هفته‌ی گذشته تا چند ماه آینده) به‌صورت پیش‌فرض می‌فرسته و برای «بایگانی»
+    (نوبت‌های قدیمی‌تر) هم limit جدا می‌فرسته — اینجا فقط ازش پیروی می‌کنیم.
+    اگه limit ارسال نشه (مثلاً برای داشبورد یا جزئیات یک روز خاص در تقویم)،
+    رفتار قبلی (بدون سقف) دست‌نخورده می‌مونه.
+    """
     date_from = request.args.get("from")
     date_to = request.args.get("to")
     status = request.args.get("status")
     q = (request.args.get("q") or "").strip()
+    limit = request.args.get("limit")
 
     query = Appointment.query
     if date_from:
@@ -132,7 +142,16 @@ def api_list_appointments(username):
         like = f"%{q}%"
         query = query.filter(or_(Appointment.name.like(like), Appointment.phone.like(like)))
 
-    items = query.order_by(Appointment.date, Appointment.time).all()
+    query = query.order_by(Appointment.date.desc(), Appointment.time.desc())
+
+    if limit:
+        try:
+            query = query.limit(int(limit))
+        except ValueError:
+            pass
+
+    items = query.all()
+    items.sort(key=lambda a: (a.date, a.time))  # نمایش نهایی صعودی باشه
     return jsonify([a.to_dict() for a in items])
 
 
@@ -154,7 +173,7 @@ def api_cancel_appointment(username, appointment_id):
 def api_edit_appointment(username, appointment_id):
     """
     ویرایش کامل و مستقیم یک نوبت — هر فیلدی (اسم، موبایل، تاریخ، ساعت،
-    نوع جلسه، وضعیت پرداخت، یادداشت) قابل تغییره، چه نوبت گذشته باشه چه
+    نوع جلسه، فرمت جلسه، وضعیت پرداخت، یادداشت) قابل تغییره، چه نوبت گذشته باشه چه
     آینده. برخلاف حالت قبلی (لغو + ثبت نوبت جدید)، همین رکورد مستقیم
     آپدیت می‌شه — پس هیچ ردی از خودش (نوبت لغوشده‌ی اضافه) باقی نمی‌مونه.
     """
@@ -177,6 +196,7 @@ def api_edit_appointment(username, appointment_id):
     appointment.date = new_date
     appointment.time = new_time
     appointment.session_type = data.get("session_type", appointment.session_type)
+    appointment.session_format = data.get("session_format", appointment.session_format)
     appointment.payment_status = data.get("payment_status", appointment.payment_status)
     appointment.notes = data.get("notes", appointment.notes)
 
@@ -211,15 +231,19 @@ def api_delete_appointment(username, appointment_id):
 @require_admin
 def api_manual_appointment(username):
     data = request.get_json() or {}
-    name         = (data.get("name") or "").strip()
-    phone        = (data.get("phone") or "").strip()
-    date         = (data.get("date") or "").strip()
-    time         = (data.get("time") or "").strip()
-    session_type = (data.get("session_type") or "").strip()
-    notes        = (data.get("notes") or "").strip()
+    name           = (data.get("name") or "").strip()
+    phone          = (data.get("phone") or "").strip()
+    date           = (data.get("date") or "").strip()
+    time           = (data.get("time") or "").strip()
+    session_type   = (data.get("session_type") or "").strip()
+    session_format = (data.get("session_format") or "individual").strip()
+    notes          = (data.get("notes") or "").strip()
 
     if not date or not time or not session_type:
         return jsonify({"success": False, "message": "تاریخ، ساعت و نوع جلسه الزامی‌اند"}), 400
+
+    if session_format not in ("individual", "couple"):
+        return jsonify({"success": False, "message": "نوع مراجعه (فردی/زوجی) معتبر نیست"}), 400
 
     # ادمین می‌تونه هر تاریخ/ساعتی (غیر از گذشته) تعریف کنه — حتی خارج از ۷ ساعت استاندارد.
     error = validate_admin_booking(date, time)
@@ -228,7 +252,9 @@ def api_manual_appointment(username):
 
     appointment = Appointment(
         name=(name or "بدون نام"), phone=(phone or "-"), date=date, time=time,
-        session_type=session_type, payment_status="not", notes=notes,
+        session_type=session_type, session_format=session_format,
+        payment_status="not", notes=notes,
+        payment_token=generate_payment_token(),
     )
     db.session.add(appointment)
     db.session.commit()
@@ -238,6 +264,74 @@ def api_manual_appointment(username):
         ensure_customer_exists(phone, name or "بدون نام")
 
     return jsonify({"success": True, "appointment_id": appointment.id})
+
+
+# ───────── مسدودسازی ساعت‌ها (پشتیبانی از چند ساعت هم‌زمان) ─────────
+
+@admin_bp.route("/<username>/api/appointments/block", methods=["POST"])
+@require_admin
+def api_block_slot(username):
+    """
+    مسدودسازی یک یا چند ساعت هم‌زمان در یک روز.
+    ورودی می‌تونه یکی از این دو شکل باشه (سازگار با نسخه‌ی قدیمی و جدید فرانت):
+    - {"date": "...", "times": ["11:00", "12:15"], "reason": "..."}
+    - {"date": "...", "time": "11:00", "reason": "..."}   (نسخه‌ی قدیمی، تک‌ساعته)
+    """
+    data = request.get_json() or {}
+    date   = (data.get("date") or "").strip()
+    times  = data.get("times") or ([data.get("time")] if data.get("time") else [])
+    reason = (data.get("reason") or "").strip()
+
+    times = [t.strip() for t in times if t and t.strip()]
+
+    if not date or not times:
+        return jsonify({"success": False, "message": "تاریخ و حداقل یک ساعت الزامی است"}), 400
+
+    created_ids = []
+    errors = []
+
+    for time in times:
+        error = validate_admin_booking(date, time)
+        if error:
+            errors.append(f"{time}: {error}")
+            continue
+
+        appointment = Appointment(
+            name="مسدود شده (ادمین)",
+            phone="-",
+            date=date,
+            time=time,
+            session_type="blocked",
+            payment_status="blocked",
+            notes=reason or "مسدودسازی دستی",
+            payment_token=generate_payment_token(),
+        )
+        db.session.add(appointment)
+        db.session.commit()
+
+        write_appointment(appointment)
+        created_ids.append(appointment.id)
+
+    return jsonify({"success": True, "created_ids": created_ids, "errors": errors})
+
+
+# ───────── نوبت‌های معلق — رزرو خودکار هفته‌ی بعد که به‌خاطر تداخل انجام نشده ─────────
+
+@admin_bp.route("/<username>/api/pending-rebookings")
+@require_admin
+def api_list_pending_rebookings(username):
+    items = PendingRebooking.query.filter_by(resolved=False) \
+        .order_by(PendingRebooking.target_date, PendingRebooking.time).all()
+    return jsonify([p.to_dict() for p in items])
+
+
+@admin_bp.route("/<username>/api/pending-rebookings/<int:pending_id>/resolve", methods=["POST"])
+@require_admin
+def api_resolve_pending_rebooking(username, pending_id):
+    p = PendingRebooking.query.get_or_404(pending_id)
+    p.resolved = True
+    db.session.commit()
+    return jsonify({"success": True})
 
 
 # ───────── باشگاه مشتریان ─────────
@@ -329,39 +423,8 @@ def api_import_customers(username):
     except Exception as e:
         return jsonify({"success": False, "message": f"خطا در پردازش فایل: {e}"}), 500
 
-@admin_bp.route("/<username>/api/appointments/block", methods=["POST"])
-@require_admin
-def api_block_slot(username):
-    data = request.get_json() or {}
-    date   = (data.get("date") or "").strip()
-    time   = (data.get("time") or "").strip()
-    reason = (data.get("reason") or "").strip()
 
-    if not date or not time:
-        return jsonify({"success": False, "message": "تاریخ و ساعت الزامی است"}), 400
-
-    error = validate_admin_booking(date, time)
-    if error:
-        return jsonify({"success": False, "message": error}), 400
-
-    appointment = Appointment(
-        name="مسدود شده (ادمین)",
-        phone="-",
-        date=date,
-        time=time,
-        session_type="blocked",
-        payment_status="blocked",
-        notes=reason or "مسدودسازی دستی",
-    )
-    db.session.add(appointment)
-    db.session.commit()
-
-    write_appointment(appointment)
-
-    return jsonify({"success": True, "appointment_id": appointment.id})
-
-
-# ───────── لاگ پیامک‌ها ─────────
+# ───────── لاگ پیامک‌ها + ارسال دستی ─────────
 
 @admin_bp.route("/<username>/api/sms-logs")
 @require_admin
@@ -374,6 +437,36 @@ def api_sms_logs(username):
 
     items = query.limit(300).all()
     return jsonify([s.to_dict() for s in items])
+
+
+@admin_bp.route("/<username>/api/sms/send", methods=["POST"])
+@require_admin
+def api_send_sms(username):
+    """
+    ارسال دستی پیامک — برای مواقعی که خودت (نه سیستم خودکار) می‌خوای
+    یه پیام آزاد به یک یا چند شماره بفرستی. عبارت «لغو ۱۱» طبق الزام
+    SignalAds خودکار به انتهای پیام اضافه می‌شه (send_sms این کار رو انجام می‌ده).
+    """
+    data = request.get_json() or {}
+    phones_raw = (data.get("phones") or "").strip()
+    message = (data.get("message") or "").strip()
+
+    if not phones_raw or not message:
+        return jsonify({"success": False, "message": "شماره و متن پیامک الزامی است"}), 400
+
+    phones = [p.strip() for p in phones_raw.replace("\n", ",").split(",") if p.strip()]
+    invalid = [p for p in phones if not (p.startswith("09") and len(p) == 11 and p.isdigit())]
+    if invalid:
+        return jsonify({"success": False, "message": f"شماره‌های نامعتبر: {', '.join(invalid)}"}), 400
+
+    if not phones:
+        return jsonify({"success": False, "message": "هیچ شماره‌ی معتبری وارد نشده"}), 400
+
+    result = send_sms(phones, message)
+    return jsonify({
+        "success": result["ok"],
+        "message": None if result["ok"] else (result.get("error") or "خطا در ارسال پیامک"),
+    })
 
 
 # ───────── آمار و مالی (بر اساس بازه‌ی from/to — سازگار با ماه شمسی) ─────────
@@ -412,12 +505,12 @@ def api_monthly_stats(username):
         "inperson_sessions": sum(1 for a in active if a.session_type == "inperson"),
         # مقادیر خام (ریال) — تقسیم بر ۱۰ برای نمایش به‌تومان توی فرانت‌اند انجام می‌شه
         "income": {
-            "online": sum(get_amount("online") for a in paid if a.session_type == "online"),
-            "inperson": sum(get_amount("inperson") for a in paid if a.session_type == "inperson"),
+            "online": sum(get_amount(a.session_type, a.session_format) for a in paid if a.session_type == "online"),
+            "inperson": sum(get_amount(a.session_type, a.session_format) for a in paid if a.session_type == "inperson"),
         },
         "debt": {
-            "online": sum(get_amount("online") for a in unpaid if a.session_type == "online"),
-            "inperson": sum(get_amount("inperson") for a in unpaid if a.session_type == "inperson"),
+            "online": sum(get_amount(a.session_type, a.session_format) for a in unpaid if a.session_type == "online"),
+            "inperson": sum(get_amount(a.session_type, a.session_format) for a in unpaid if a.session_type == "inperson"),
         },
     })
 
@@ -428,7 +521,7 @@ def api_client_debts(username):
     unpaid = Appointment.query.filter_by(payment_status="not").all()
     debts = {}
     for a in unpaid:
-        amount = get_amount(a.session_type)
+        amount = get_amount(a.session_type, a.session_format)
         # اگه موبایل نداشته باشه (نوبت دستی بدون شماره)، هرکدوم جدا حساب می‌شه —
         # وگرنه چند مراجع بی‌شماره‌ی مختلف اشتباهی زیر یه ردیف جمع می‌شدن.
         key = a.phone if a.phone and a.phone != "-" else f"noph-{a.id}"
@@ -466,3 +559,39 @@ def api_settle_debt(username):
         update_status(a.date, a.time, "paid")
 
     return jsonify({"success": True, "settled_count": len(items)})
+
+
+@admin_bp.route("/<username>/api/clients/remind-debt", methods=["POST"])
+@require_admin
+def api_remind_debt(username):
+    """پیامک یادآوری بدهی به یک مراجع خاص — برای دکمه‌ی «یادآوری» کنار «تسویه شد»."""
+    data = request.get_json() or {}
+    phone = (data.get("phone") or "").strip()
+    name = (data.get("name") or "").strip()
+    amount = data.get("amount")
+
+    if not phone or phone == "-":
+        return jsonify({"success": False, "message": "این مراجع شماره تماس ثبت‌شده ندارد"}), 400
+
+    if not (phone.startswith("09") and len(phone) == 11 and phone.isdigit()):
+        return jsonify({"success": False, "message": "شماره موبایل معتبر نیست"}), 400
+
+    try:
+        amount_int = int(amount)
+    except (TypeError, ValueError):
+        amount_int = 0
+
+    amount_str = f"{amount_int:,}".replace(",", "٬") if amount_int else ""
+
+    message = (
+        f"کلینیک مسیر\n"
+        f"یادآوری: مبلغ {amount_str} تومان بابت جلسات قبلی شما هنوز تسویه نشده.\n"
+        f"لطفاً در اولین فرصت نسبت به پرداخت اقدام کنید.\n"
+        f"سپاس — کلینیک مسیر"
+    )
+
+    result = send_sms([phone], message)
+    return jsonify({
+        "success": result["ok"],
+        "message": None if result["ok"] else (result.get("error") or "خطا در ارسال پیامک"),
+    })

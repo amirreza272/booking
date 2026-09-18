@@ -69,7 +69,37 @@ def migrate_db():
     except Exception as e:
         db.session.rollback()
         results.append({"step": "add reminder_sent column", "ok": False, "detail": str(e)})
+        
+    try:
+        db.session.execute(text(
+            "ALTER TABLE appointments ADD COLUMN session_format VARCHAR(20) DEFAULT 'individual'"
+        ))
+        db.session.commit()
+        results.append({"step": "add session_format column", "ok": True})
+    except Exception as e:
+        db.session.rollback()
+        results.append({"step": "add session_format column", "ok": False, "detail": str(e)})
+        
+    try:
+        db.session.execute(text(
+            "ALTER TABLE appointments ADD COLUMN payment_token VARCHAR(64)"
+        ))
+        db.session.commit()
+        results.append({"step": "add payment_token column", "ok": True})
+    except Exception as e:
+        db.session.rollback()
+        results.append({"step": "add payment_token column", "ok": False, "detail": str(e)})
 
+    try:
+        db.session.execute(text(
+            "ALTER TABLE appointments ADD COLUMN rebook_processed BOOLEAN DEFAULT 0"
+        ))
+        db.session.commit()
+        results.append({"step": "add rebook_processed column", "ok": True})
+    except Exception as e:
+        db.session.rollback()
+        results.append({"step": "add rebook_processed column", "ok": False, "detail": str(e)})
+    
     try:
         db.create_all()
         results.append({"step": "create_all (sms_logs, customers و جدول‌های جدید احتمالی)", "ok": True})

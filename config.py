@@ -40,9 +40,20 @@ class Config:
     # SMS_API_TOKEN: از پنل SignalAds بگیر (Bearer token)
     # SMS_FROM: شماره‌ی خط اختصاصی که ازشون گرفتی
     # DOCTOR_PHONE: موبایل خانم دکتر — برای گزارش روزانه
-    SMS_API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIyIiwianRpIjoiMTMyMGJiODA2ZDNlOGEzZDg2NGFmNzk0OTY0YTgzODJhMDVmMTdlZGMyZTI4NTA2NWZmMWJhMTdlOWJkNWVhZGUyMjE2MmQ2YWZhZTAyODgiLCJpYXQiOjE3ODU5NTcxMTkuNzE4MDQ2LCJuYmYiOjE3ODU5NTcxMTkuNzE4MDQ2LCJleHAiOjE4MTc0OTMxMTkuNzE4MDQ2LCJzdWIiOiIxNzU2NCIsInNjb3BlcyI6IltdIn0.zQvtNDqNa6Q93oaE5ZcKiyobuLzMKyIp37S6kKAzQbEduE6ypVFZwz2KsaB3rZmMOdeO9vIRcFeb91j51pCkXElABXU57ThRdQLjJ_rGPKgqtbZbkW5o-1qsqOh14-0RMuFsY_YDhi3B6Ox1RINnRGfsac2VYI5wWA08z0nYzhRmpuwp3-Em43I4QmA6A7jtS58A0HUDyLVWHDtSSkcvkRGvQk_qkb8uhnwTJ4pI25Hz1O9ZIixGHkVguKrJwgLav8ltiSo56W4zOQgYbV8FTFLmwqopMGSsAvucgXE3ibTi5Hm0hYVJdW7MPZfyNYw5f4lwy3Fu2tbRlcnY1wwBuLM-XM2YTRDC8xYXyfV6KjawCYkKNTNHi0NHzgCIVKtvv4XWkMYdjnXp67sd8AZMZr87z6NTyPUDa3wm1JUcvo_-pNcHd3hu7YOycpju3vhy94cK7B9ydvQWr8nqQxrnbNCHJ-a_xCSeIhmdXJSgnZIEO4K3GwKPHPCudLcCQLSH7edtxYBC_PHunuXVgN7NcVZh93wF19vrTKPPDePQnSc5z2vUiy7XYFZBBv8TwgWN9wgH1hUL3jCq6h5wK4ug_2gCNXU-dLwkWjIHQXLgZeWUCZ7VrPep9BoqzmLwCrAYkIi5brlTdqeyjkXg0Pkimbfcpj1ZvviFyBeKKlKglv8"   # ← پر کن
-    SMS_FROM = "989998623317"         # ← پر کن
-    DOCTOR_PHONE = "9363643522"     # ← پر کن
+    # ─── پیامک — SignalAds (Transmitor) ──────────────────
+    SMS_API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIyIiwianRpIjoiMmZiYThjNTViNjExNjkyZDcwOWI3NjM0MTM0ZDhjNWVkMTJkNWJmM2IyNjJmZjhmMDdjMmViY2EzNzBiMDg5MWJmY2YyOTEyMzY5YWM0ZTciLCJpYXQiOjE3ODkyMDg2NjUuNzQyMTI0LCJuYmYiOjE3ODkyMDg2NjUuNzQyMTI0LCJleHAiOjE4MjA3NDQ2NjUuNzQyMTI0LCJzdWIiOiIxNzU2NCIsInNjb3BlcyI6IltdIn0.1NZKc1yCx4MdeZgIdMA_LS9CTKRcUPBEEFKEMfACbZxgAx1b7O1QlFXAELtZtXgMW-a7lf8F-fi2XkAAZtJyzubIcqqAwYR0LgHCRiLYTdsKQiR8FfYR-ByKgLX8JPn31wCQp-xM0vpuE5JgKbVY1vpDbNNlZg3xqRVMXhfJ4M-_CUKx5jfLx_Z-yzI5dtwHpXghJrRmsHeAGEgwMXEVZ1Y44nRjTM2Su61CO_kX4VIk8cPVACErYfJbpbnGYBa7hNTYvFaWOuGolRGWDbQFYp1ljNSWNTNGqbr9bsAvGKdq60DX5o0NGGhepHbmwv3kCOHw2otcwexA3RNr5elF-mB9U2mJ_S2nPjuNgNprOjq668Jk-46uU-FgiKOun5iJnIo2hg4-lfv_i2Cxi2F2yCcQ5fISO0fFErgSIrSFO2CxHUyiybVu77L24t2jnZSzxUvbK3GSd1tXgMGTC7Vo1wNjwluXeMu6rItqVRNciSJ9yZC9infAyZirzJOlpDixMQcrEW6UtLJH91y4ZPft4p-asC3H_0rFz5hVyqkonbhs8at69Dt9qXi61GJaGRgw5rixP522ld8N_Y8OXIcu7UvIaTIZbiU4qPZhkB1ci5G_4VYqPNhJ4R1jGzbo9BDnTdgenkJ2D836Zkqe03joUbm9nFvHwbcrC-69MIBojQ8"
+    SMS_FROM = "989998623317"
+    DOCTOR_PHONE = "09363643522"
+
+    # ─── آدرس پایه‌ی سایت — برای ساخت لینک‌های پیامکی ────
+    SITE_BASE_URL = "https://masircenter.com/booking"
+
+    # ─── کلید محافظت روت‌های Cron (همون کلید setup رو بازاستفاده می‌کنیم) ───
+    CRON_SECRET_KEY = "8282cd334158521e3de2216b855577207e84e9e16b0206700dff4c909c4d2f9f"
+
+    # اطلاعات مطب/جلسه‌ی آنلاین — برای صفحه‌ی پرداخت (pay.html)
+    CLINIC_ADDRESS = "ارومیه، عمار، روبه‌روی خیابان شفا، ساختمان مرتاض، طبقه ۶، واحد C"
+    SESSION_LINK = "https://event.alocom.co/class/solmadan/e8b49b83"
 
     # سوییچ پسوند «لغو 11» — با تست واقعی (2026-08-06) قطعی شد: اجباریه.
     # API با نبودش خطای 400 می‌ده، حتی برای خط خدماتی.

@@ -9,6 +9,9 @@ const state = {
     selectedDate: null,     // '1404-05-12'  (شمسی)
     selectedDateGreg: null, // '2025-08-03'  (میلادی برای API)
     selectedTime: null,     // '17:00'
+    sessionType: null,
+    sessionFormat: null,   // ← جدید — 'individual' | 'couple'
+    selectedDate: null,
     name: '',
     phone: '',
     notes: '',
@@ -16,7 +19,8 @@ const state = {
     calMonth: null,
     availableDays: [],      // لیست روزهای آزاد از API (میلادی)
 };
-
+const CLINIC_ADDRESS = 'ارومیه، عمار، روبه‌روی خیابان شفا، ساختمان مرتاض، طبقه ۶، واحد C';
+const SESSION_LINK   = 'https://event.alocom.co/class/solmadan/e8b49b83';
 // ─── آدرس‌دهی API ────────────────────────────────────────────
 // BASE به صورت خودکار از Flask تنظیم می‌شود
 // روی /booking → '/booking' ، روی / → ''
@@ -28,6 +32,24 @@ const FA = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
 function toFa(n) {
     return String(n).replace(/\d/g, d => FA[d]);
 }
+
+
+const BASE_PRICE       = 800000;
+const ONLINE_SURCHARGE = 50000;
+const COUPLE_SURCHARGE = 50000;
+
+function calcPrice() {
+    let price = BASE_PRICE;
+    if (state.sessionType === 'online') price += ONLINE_SURCHARGE;
+    if (state.sessionFormat === 'couple') price += COUPLE_SURCHARGE;
+    return price;
+}
+
+function formatToman(n) {
+    const withSeparators = n.toLocaleString('en-US').replace(/,/g, '٬');
+    return toFa(withSeparators) + ' تومان';
+}
+
 
 // ─── تبدیل تقویم شمسی ↔ میلادی ─────────────────────────────
 // کپی مستقیم از jalaali-js v2 (MIT License) — تست‌شده و اثبات‌شده
@@ -155,6 +177,9 @@ function init() {
     document.querySelectorAll('input[name="session_type"]').forEach(radio => {
         radio.addEventListener('change', onSessionTypeChange);
     });
+    document.querySelectorAll('input[name="session_format"]').forEach(radio => {
+        radio.addEventListener('change', onSessionFormatChange);
+    });
 }
 
 // ─── محاسبه روزهای آزاد بدون API (fallback) ─────────────────
@@ -182,21 +207,30 @@ function buildFallbackDays() {
 function onSessionTypeChange(e) {
     state.sessionType = e.target.value;
 
-    document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
-    e.target.closest('.session-card').classList.add('selected');
+    document.querySelectorAll('input[name="session_type"]').forEach(r => {
+        r.closest('.session-card').classList.toggle('selected', r.checked);
+    });
 
-    document.getElementById('inperson-notice').style.display =
-        state.sessionType === 'inperson' ? 'block' : 'none';
+    document.getElementById('format-section').classList.remove('hidden');
+    validateStep1();
 
-    document.getElementById('btn-step1').disabled = false;
-
-    // اگر ساعت انتخاب شده بود و الان inperson شد و ساعت 21 بود، پاک کن
     if (state.sessionType === 'inperson' && state.selectedTime === '21:00') {
         state.selectedTime = null;
         document.getElementById('btn-step2').disabled = true;
     }
-    // بازسازی ساعت‌ها اگر روز انتخاب شده
     if (state.selectedDate) renderSlots();
+}
+
+function onSessionFormatChange(e) {
+    state.sessionFormat = e.target.value;
+    document.querySelectorAll('input[name="session_format"]').forEach(r => {
+        r.closest('.session-card').classList.toggle('selected', r.checked);
+    });
+    validateStep1();
+}
+
+function validateStep1() {
+    document.getElementById('btn-step1').disabled = !(state.sessionType && state.sessionFormat);
 }
 
 // ─── تغییر ماه تقویم ────────────────────────────────────────
@@ -333,11 +367,12 @@ function validateStep3() {
 // ─── رندر خلاصه رزرو ────────────────────────────────────────
 function renderSummary(containerId) {
     const sessionLabel = state.sessionType === 'online' ? 'آنلاین' : 'حضوری';
+    const formatLabel  = state.sessionFormat === 'couple' ? 'زوجی' : 'فردی';
     const container = document.getElementById(containerId);
 
     if (containerId === 'booking-summary-top') {
         container.innerHTML = `
-            <div><span class="label">نوع جلسه:</span><span class="val">${sessionLabel}</span></div>
+            <div><span class="label">نوع جلسه:</span><span class="val">${sessionLabel} (${formatLabel})</span></div>
             <div><span class="label">تاریخ:</span><span class="val">${toFa(state.selectedDate)}</span></div>
             <div><span class="label">ساعت:</span><span class="val">${toFa(state.selectedTime)}</span></div>
         `;
@@ -345,7 +380,7 @@ function renderSummary(containerId) {
         container.innerHTML = `
             <div class="row"><span class="label">نام</span><span class="val">${state.name}</span></div>
             <div class="row"><span class="label">موبایل</span><span class="val">${toFa(state.phone)}</span></div>
-            <div class="row"><span class="label">نوع جلسه</span><span class="val">${sessionLabel}</span></div>
+            <div class="row"><span class="label">نوع جلسه</span><span class="val">${sessionLabel} (${formatLabel})</span></div>
             <div class="row"><span class="label">تاریخ</span><span class="val">${toFa(state.selectedDate)}</span></div>
             <div class="row"><span class="label">ساعت</span><span class="val">${toFa(state.selectedTime)}</span></div>
         `;
@@ -385,9 +420,7 @@ function goToStep(step) {
         state.notes = document.getElementById('input-notes').value.trim();
         renderSummary('final-summary');
 
-        // قیمت بر اساس نوع جلسه
-        const price = state.sessionType === 'online' ? '۸۵۰٬۰۰۰ تومان' : '۸۰۰٬۰۰۰ تومان';
-        document.getElementById('price-label').textContent = price;
+        document.getElementById('price-label').textContent = formatToman(calcPrice());
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -400,12 +433,13 @@ function submitBooking() {
     btn.textContent = 'در حال اتصال به درگاه...';
 
     const payload = {
-        name:         state.name,
-        phone:        state.phone,
-        date:         state.selectedDateGreg,
-        time:         state.selectedTime,
-        session_type: state.sessionType,
-        notes:        state.notes,
+        name:           state.name,
+        phone:          state.phone,
+        date:           state.selectedDateGreg,
+        time:           state.selectedTime,
+        session_type:   state.sessionType,
+        session_format: state.sessionFormat,
+        notes:          state.notes,
     };
 
     fetch(apiUrl('/api/payment/start'), {
@@ -437,7 +471,8 @@ function checkUrlParams() {
 
     if (params.get('success') === '1') {
         const refId = params.get('ref') || '';
-        showSuccessPage(refId);
+        const type  = params.get('type') || '';
+        showSuccessPage(refId, type);
         window.history.replaceState({}, '', window.location.pathname);
         return;
     }
@@ -467,8 +502,8 @@ function showFailurePage(msg) {
 // ─── تلاش دوباره — برگشت به مرحله ۱ ────────────────────────
 function retryPayment() {
     document.getElementById('step-failed').classList.add('hidden');
-    // ریست state
     state.sessionType = null;
+    state.sessionFormat = null;
     state.selectedDate = null;
     state.selectedDateGreg = null;
     state.selectedTime = null;
@@ -477,6 +512,8 @@ function retryPayment() {
     state.notes = '';
     document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll('input[name="session_type"]').forEach(r => r.checked = false);
+    document.querySelectorAll('input[name="session_format"]').forEach(r => r.checked = false);
+    document.getElementById('format-section').classList.add('hidden');
     document.getElementById('btn-step1').disabled = true;
     goToStep(1);
 }
@@ -512,7 +549,7 @@ function showErrorBanner(msg) {
 }
 
 // ─── نمایش صفحه موفقیت ──────────────────────────────────────
-function showSuccessPage(refId) {
+function showSuccessPage(refId, sessionType) {
     [1,2,3,4].forEach(s => document.getElementById(`step-${s}`).classList.add('hidden'));
     document.getElementById('step-failed').classList.add('hidden');
     document.getElementById('step-success').classList.remove('hidden');
@@ -526,6 +563,8 @@ function showSuccessPage(refId) {
         <div><span class="label">وضعیت پرداخت:</span><span class="val" style="color:var(--teal)">✓ موفق</span></div>
     `;
 
+    renderSuccessSessionInfo(sessionType);
+
     for (let s = 1; s <= 4; s++) {
         const dot = document.getElementById(`step-dot-${s}`);
         dot.classList.remove('active');
@@ -533,6 +572,32 @@ function showSuccessPage(refId) {
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── نمایش لینک جلسه (آنلاین) یا آدرس مطب (حضوری) در صفحه‌ی موفقیت ───
+function renderSuccessSessionInfo(sessionType) {
+    const box = document.getElementById('success-session-info');
+    if (!box) return;
+
+    if (sessionType === 'online') {
+        box.innerHTML = `
+            <div class="notice" style="margin-bottom:16px">
+                💻 چند دقیقه قبل از ساعت نوبت، از همین لینک وارد جلسه بشید:
+            </div>
+            <a class="btn-phone" href="${SESSION_LINK}" target="_blank" rel="noopener" style="margin-bottom:16px">
+                🔗 ورود به جلسه آنلاین
+            </a>
+        `;
+    } else if (sessionType === 'inperson') {
+        box.innerHTML = `
+            <div class="notice" style="margin-bottom:16px; text-align:right">
+                📍 آدرس مطب:<br><strong>${CLINIC_ADDRESS}</strong>
+            </div>
+        `;
+    } else {
+        // اگه type به هر دلیلی توی URL نبود (مثلاً کش شده یا ادمین دستی زده)، چیزی نشون نده — خطا نشکنه.
+        box.innerHTML = '';
+    }
 }
 
 // ─── شروع ────────────────────────────────────────────────────

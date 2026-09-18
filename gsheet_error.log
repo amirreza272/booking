@@ -3,3 +3,9 @@
 2026-08-13T23:27:04.047583 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:2437)')))
 2026-08-16T21:47:28.087878 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-08-17) باید دستی توی شیت اصلاح بشه
 2026-08-30T11:43:19.291367 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='oauth2.googleapis.com', port=443): Read timed out. (read timeout=120)
+2026-09-03T11:04:52.382718 — [باشگاه مشتریان] خطا در ثبت/آپدیت مشتری 09050652331: APIError: [503]: The service is currently unavailable.
+2026-09-11T18:45:44.316074 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (01:15 در 2026-09-11) باید دستی توی شیت اصلاح بشه
+2026-09-15T14:25:33.355331 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-09-16T16:11:20.970503 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (13:30 در 2026-09-15) باید دستی توی شیت اصلاح بشه
+2026-09-16T16:12:00.067538 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-09-15) باید دستی توی شیت اصلاح بشه
+2026-09-18T09:51:30.634956 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (01:15 در 2026-09-13) باید دستی توی شیت اصلاح بشه
