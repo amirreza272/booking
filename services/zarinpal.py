@@ -4,9 +4,9 @@ from config import Config
 MERCHANT_ID      = "38c7a109-8115-4090-bfb1-021b481a6926"
 
 # ─── قیمت‌گذاری (ریال) — پایه + سورشارژهای مستقل ────────
-BASE_AMOUNT      = 8000000   # ۸۰۰٬۰۰۰ تومان — حضوری + فردی
-ONLINE_SURCHARGE = 500000    # ۵۰٬۰۰۰ تومان اضافه برای آنلاین
-COUPLE_SURCHARGE = 500000    # ۵۰٬۰۰۰ تومان اضافه برای زوجی
+BASE_AMOUNT      = 9000000
+ONLINE_SURCHARGE = 500000
+COUPLE_SURCHARGE = 500000
 
 CALLBACK_URL     = "https://masircenter.com/booking/api/payment/callback"
 

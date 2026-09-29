@@ -20,7 +20,7 @@ const state = {
     availableDays: [],      // لیست روزهای آزاد از API (میلادی)
 };
 const CLINIC_ADDRESS = 'ارومیه، عمار، روبه‌روی خیابان شفا، ساختمان مرتاض، طبقه ۶، واحد C';
-const SESSION_LINK   = 'https://event.alocom.co/class/solmadan/e8b49b83';
+const SESSION_LINK   = 'https://app.classinar.ir/meeting/meeting59321f0043e/';
 // ─── آدرس‌دهی API ────────────────────────────────────────────
 // BASE به صورت خودکار از Flask تنظیم می‌شود
 // روی /booking → '/booking' ، روی / → ''
@@ -34,7 +34,7 @@ function toFa(n) {
 }
 
 
-const BASE_PRICE       = 800000;
+const BASE_PRICE       = 900000;
 const ONLINE_SURCHARGE = 50000;
 const COUPLE_SURCHARGE = 50000;
 

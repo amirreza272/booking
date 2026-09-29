@@ -53,7 +53,7 @@ class Config:
 
     # اطلاعات مطب/جلسه‌ی آنلاین — برای صفحه‌ی پرداخت (pay.html)
     CLINIC_ADDRESS = "ارومیه، عمار، روبه‌روی خیابان شفا، ساختمان مرتاض، طبقه ۶، واحد C"
-    SESSION_LINK = "https://event.alocom.co/class/solmadan/e8b49b83"
+    SESSION_LINK = "https://app.classinar.ir/meeting/meeting59321f0043e/"
 
     # سوییچ پسوند «لغو 11» — با تست واقعی (2026-08-06) قطعی شد: اجباریه.
     # API با نبودش خطای 400 می‌ده، حتی برای خط خدماتی.
