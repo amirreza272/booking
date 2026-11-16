@@ -13,7 +13,7 @@ from openpyxl import load_workbook
 
 from extensions import db
 from models import Customer
-from services.gsheet_customers import _get_worksheet, upsert_customer
+from services.gsheet_customers import _get_worksheet, upsert_customer, _safe
 
 
 def _normalize_phone(value):
@@ -91,14 +91,12 @@ def import_customers_from_excel(file_stream):
     db.session.commit()
 
     # ─── گوگل‌شیت ───
-    # مشتری‌های *جدید* رو یکجا (یک درخواست API) اضافه می‌کنیم — برای فایل‌های
-    # بزرگ خیلی سریع‌تره. اگه این روش دسته‌ای به هر دلیلی خطا داد، به روش
-    # تک‌تک (که قبلاً برای افزودن دستی تست و تأیید شده) fallback می‌کنیم
-    # تا داده هیچ‌وقت گم نشه.
+    # مشتری‌های *جدید* رو یکجا (یک درخواست API) اضافه می‌کنیم. اگه این روش
+    # دسته‌ای خطا داد، به روش تک‌تک fallback می‌کنیم تا داده گم نشه.
     if new_for_sheet:
         try:
             worksheet = _get_worksheet()
-            values = [[i["phone"], i["name"], i["birthdate"], i["city"]] for i in new_for_sheet]
+            values = [[i["phone"], _safe(i["name"]), _safe(i["birthdate"]), _safe(i["city"])] for i in new_for_sheet]
             worksheet.append_rows(values, value_input_option="USER_ENTERED")
         except Exception as e:
             report["errors"].append(f"افزودن دسته‌ای به گوگل‌شیت شکست خورد ({e}) — در حال تلاش تک‌تک...")
@@ -106,14 +104,13 @@ def import_customers_from_excel(file_stream):
                 try:
                     worksheet = _get_worksheet()
                     worksheet.append_row(
-                        [i["phone"], i["name"], i["birthdate"], i["city"]],
+                        [i["phone"], _safe(i["name"]), _safe(i["birthdate"]), _safe(i["city"])],
                         value_input_option="USER_ENTERED",
                     )
                 except Exception as e2:
                     report["errors"].append(f"خطا در افزودن مشتری {i['phone']} به گوگل‌شیت: {e2}")
 
-    # مشتری‌های آپدیت‌شده (که از قبل توی شیت هم بودن) رو تک‌تک sync می‌کنیم —
-    # معمولاً توی یه وارد کردن اولیه تعدادشون کمه یا صفره.
+    # مشتری‌های آپدیت‌شده (که از قبل توی شیت هم بودن) رو تک‌تک sync می‌کنیم.
     for c in updated_customers:
         upsert_customer(c)
 

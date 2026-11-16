@@ -1,10 +1,11 @@
 from datetime import timedelta, datetime
 from extensions import db
 from models import Appointment, PendingRebooking, generate_payment_token
-from services.booking import OCCUPIED_STATUSES
+from services.booking import find_slot_conflict
 from services.gsheet import write_appointment
 from services.sms import send_sms
-from config import Config
+
+SEND_REBOOKING_SMS = False
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
@@ -30,7 +31,7 @@ def _jalali_str(date_str):
     return f"{weekday_fa} {day_fa} {month_name} {year_fa}"
 
 
-def _build_payment_sms(appointment, pay_link):
+def _build_rebooking_sms(appointment):
     type_fa = "آنلاین" if appointment.session_type == "online" else "حضوری"
     format_fa = "زوجی" if appointment.session_format == "couple" else "فردی"
     jalali_date = _jalali_str(appointment.date)
@@ -38,8 +39,7 @@ def _build_payment_sms(appointment, pay_link):
         f"کلینیک مسیر\n"
         f"نوبت هفته‌ی آینده‌ی شما ثبت شد ({type_fa} - {format_fa}).\n"
         f"تاریخ: {jalali_date} ساعت {appointment.time}\n"
-        f"جهت تکمیل رزرو، هزینه را از لینک زیر پرداخت کنید:\n"
-        f"{pay_link}"
+        f"جهت پرداخت یا هماهنگی با شماره ۰۹۰۱۷۶۴۴۶۷۸ تماس بگیرید."
     )
 
 
@@ -47,13 +47,13 @@ def run_next_week_rebooking(today_str):
     """
     today_str: تاریخ امروز به فرمت YYYY-MM-DD (میلادی، تهران)
     برای همه‌ی نوبت‌های امروز (paid یا not) که هنوز پردازش نشدن،
-    همون ساعت هفته‌ی بعد رو با وضعیت 'not' می‌سازه و پیامک پرداخت می‌فرسته.
+    همون ساعت هفته‌ی بعد رو با وضعیت 'not' می‌سازه و پیامک اطلاع‌رسانی می‌فرسته.
     """
     report = {"processed": 0, "created": 0, "conflicts": 0, "sms_sent": 0, "sms_failed": 0, "skipped_no_phone": 0}
 
     todays = Appointment.query.filter(
         Appointment.date == today_str,
-        Appointment.payment_status.in_(("paid", "not")),
+        Appointment.payment_status.in_(("paid", "not", "deposit")),
         Appointment.rebook_processed.is_(False),
     ).all()
 
@@ -64,11 +64,8 @@ def run_next_week_rebooking(today_str):
         target_date_obj = datetime.strptime(a.date, "%Y-%m-%d").date() + timedelta(days=7)
         target_date = target_date_obj.strftime("%Y-%m-%d")
 
-        conflict = Appointment.query.filter(
-            Appointment.date == target_date,
-            Appointment.time == a.time,
-            Appointment.payment_status.in_(OCCUPIED_STATUSES),
-        ).first()
+        scope = "inperson" if a.session_type == "inperson" else "online"
+        conflict = find_slot_conflict(target_date, a.time, scope)
 
         if conflict:
             report["conflicts"] += 1
@@ -94,10 +91,13 @@ def run_next_week_rebooking(today_str):
 
         write_appointment(new_appointment)
 
+        if not SEND_REBOOKING_SMS:
+            report["sms_disabled"] = report.get("sms_disabled", 0) + 1
+            continue
+
         is_valid_phone = new_appointment.phone.startswith("09") and len(new_appointment.phone) == 11 and new_appointment.phone.isdigit()
         if is_valid_phone:
-            pay_link = f"{Config.SITE_BASE_URL}/pay/{new_appointment.payment_token}"
-            result = send_sms([new_appointment.phone], _build_payment_sms(new_appointment, pay_link))
+            result = send_sms([new_appointment.phone], _build_rebooking_sms(new_appointment))
             if result["ok"]:
                 report["sms_sent"] += 1
             else:

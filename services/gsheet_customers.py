@@ -11,6 +11,12 @@ HEADERS = ["شماره", "نام", "تاریخ تولد", "شهر"]
 _client = None
 
 
+def _safe(v):
+    """جلوگیری از Formula Injection: مقادیر شروع‌شده با = + - @ به متن تبدیل می‌شن."""
+    v = str(v or "")
+    return "'" + v if v[:1] in ("=", "+", "-", "@") else v
+
+
 def _get_worksheet():
     global _client
     if _client is None:
@@ -46,7 +52,7 @@ def _search_key(phone):
     که دوست داری رو حفظ می‌کنه — گوگل‌شیت شماره رو به‌عنوان عدد ذخیره می‌کنه.
     ولی همین یعنی وقتی می‌خوایم یه ردیف موجود رو برای ویرایش/حذف پیدا کنیم،
     باید دقیقاً با همون فرمت (بدون صفر اول) جستجو کنیم، وگرنه find() هیچ‌وقت
-    تطبیق پیدا نمی‌کنه و همیشه فکر می‌کنه ردیف جدیده — همون باگی که داشتیم.
+    تطبیق پیدا نمی‌کنه و همیشه فکر می‌کنه ردیف جدیده.
     """
     return phone[1:] if phone.startswith("0") else phone
 
@@ -59,7 +65,7 @@ def upsert_customer(customer):
     try:
         worksheet = _get_worksheet()
         cell = worksheet.find(_search_key(customer.phone), in_column=1)
-        row = [customer.phone, customer.name, customer.birthdate or "", customer.city or ""]
+        row = [customer.phone, _safe(customer.name), _safe(customer.birthdate), _safe(customer.city)]
 
         if cell:
             worksheet.update(f"A{cell.row}:D{cell.row}", [row], value_input_option="USER_ENTERED")

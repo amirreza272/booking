@@ -3,8 +3,8 @@ import traceback
 from flask import Blueprint, jsonify, request, redirect, session, url_for
 from extensions import db
 from models import Appointment, generate_payment_token
-from services.booking import validate_booking
-from services.zarinpal import request_payment, verify_payment, get_amount
+from services.booking import validate_booking, find_slot_conflict
+from services.zarinpal import request_payment, verify_payment, get_amount, DEPOSIT_AMOUNT
 from services.gsheet import log_appointment, update_status
 from services.customers import ensure_customer_exists
 from config import BASE_DIR, Config
@@ -33,19 +33,22 @@ def start():
     if not data:
         return jsonify({"success": False, "message": "داده‌ای ارسال نشده است"}), 400
 
-    name           = data.get("name", "").strip()
-    phone          = data.get("phone", "").strip()
-    date           = data.get("date", "").strip()
-    time           = data.get("time", "").strip()
-    session_type   = data.get("session_type", "").strip()
+    name           = (data.get("name") or "").strip()
+    phone          = (data.get("phone") or "").strip()
+    date           = (data.get("date") or "").strip()
+    time           = (data.get("time") or "").strip()
+    session_type   = (data.get("session_type") or "").strip()
     session_format = (data.get("session_format") or "individual").strip()
-    notes          = data.get("notes", "").strip()
+    notes          = (data.get("notes") or "").strip()
 
     if not all([name, phone, date, time, session_type]):
         return jsonify({"success": False, "message": "تمام فیلدهای اجباری را پر کنید"}), 400
 
     if session_format not in ("individual", "couple"):
         return jsonify({"success": False, "message": "نوع مراجعه (فردی/زوجی) معتبر نیست"}), 400
+
+    if session_type not in ("online", "inperson"):
+        return jsonify({"success": False, "message": "نوع جلسه معتبر نیست"}), 400
 
     if not (phone.startswith("09") and len(phone) == 11 and phone.isdigit()):
         return jsonify({"success": False, "message": "شماره موبایل معتبر نیست"}), 400
@@ -57,12 +60,12 @@ def start():
     session["pending_booking"] = {
         "name": name, "phone": phone, "date": date, "time": time,
         "session_type": session_type, "session_format": session_format, "notes": notes,
-        "amount": get_amount(session_type, session_format),
+        "amount": DEPOSIT_AMOUNT,
     }
 
     format_fa = "زوجی" if session_format == "couple" else "فردی"
-    desc = f"رزرو جلسه مشاوره — {name} — {date} ساعت {time} ({format_fa})"
-    result = request_payment(desc, session_type, session_format)
+    desc = f"پیش‌پرداخت رزرو جلسه مشاوره — {name} — {date} ساعت {time} ({format_fa})"
+    result = request_payment(desc, session_type, session_format, amount=DEPOSIT_AMOUNT)
 
     if not result["ok"]:
         return jsonify({"success": False, "message": result["error"]}), 502
@@ -81,21 +84,15 @@ def callback():
         if not pending or pending.get("authority") != authority:
             return redirect(home_url("error=invalid_session"))
 
-        amount = pending.get("amount", get_amount(
-            pending.get("session_type", "online"),
-            pending.get("session_format", "individual"),
-        ))
+        amount = pending.get("amount", DEPOSIT_AMOUNT)
         result = verify_payment(authority, status, amount)
 
         if not result["ok"]:
             session.pop("pending_booking", None)
             return redirect(home_url("error=payment_failed"))
 
-        conflict = Appointment.query.filter(
-            Appointment.date == pending["date"],
-            Appointment.time == pending["time"],
-            Appointment.payment_status.in_(("paid", "not")),
-        ).first()
+        scope = "inperson" if pending["session_type"] == "inperson" else "online"
+        conflict = find_slot_conflict(pending["date"], pending["time"], scope)
 
         if conflict:
             session.pop("pending_booking", None)
@@ -107,7 +104,7 @@ def callback():
             session_type=pending["session_type"],
             session_format=pending.get("session_format", "individual"),
             notes=pending.get("notes", ""),
-            payment_status="paid",
+            payment_status="deposit",   # فقط پیش‌پرداخت — مابقی بعداً توسط کلینیک دریافت می‌شه
             authority=authority, ref_id=result["ref_id"],
             payment_token=generate_payment_token(),
         )

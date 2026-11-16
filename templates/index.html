@@ -150,15 +150,22 @@
                 </div>
             </section>
 
-            <!-- === STEP 4: Payment === -->
+            <!-- === STEP 4: Payment (deposit only) === -->
             <section class="card hidden" id="step-4">
-                <h2 class="card-title">تأیید و پرداخت</h2>
+                <h2 class="card-title">تأیید و پرداخت پیش‌پرداخت</h2>
 
                 <div class="final-summary" id="final-summary"></div>
 
                 <div class="price-box" id="price-box">
-                    <span>مبلغ قابل پرداخت</span>
+                    <span>مبلغ پیش‌پرداخت (قابل پرداخت اکنون)</span>
+                    <strong id="deposit-label">{{ deposit_toman }} تومان</strong>
+                </div>
+
+                <div class="notice">
+                    ℹ️ مبلغ بالا فقط <strong>پیش‌پرداخت</strong> برای قطعی شدن زمان نوبت شماست.
+                    هزینه‌ی کل جلسه
                     <strong id="price-label">—</strong>
+                    است که مابقی آن (کسر پیش‌پرداخت) در زمان جلسه توسط کلینیک دریافت می‌شود.
                 </div>
 
                 <div class="notice">
@@ -168,7 +175,7 @@
                 <div class="step-actions">
                     <button class="btn-secondary" onclick="goToStep(3)">برگشت</button>
                     <button class="btn-pay" id="btn-pay" onclick="submitBooking()">
-                        پرداخت و ثبت نوبت
+                        پرداخت پیش‌پرداخت و ثبت نوبت
                     </button>
                 </div>
             </section>
@@ -177,7 +184,7 @@
             <section class="card hidden" id="step-success">
                 <div class="result-icon">✅</div>
                 <h2 class="result-title">نوبت شما با موفقیت ثبت شد</h2>
-                <p class="result-subtitle">منتظر تماس تیم کلینیک مسیر باشید</p>
+                <p class="result-subtitle">پیش‌پرداخت دریافت شد؛ مابقی هزینه‌ی جلسه در زمان مراجعه دریافت می‌شود</p>
                 <div class="result-summary" id="success-summary"></div>
                 <div id="success-session-info"></div>
                 <div class="notice" style="text-align:center; margin-bottom:20px">

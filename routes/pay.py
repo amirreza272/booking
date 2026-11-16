@@ -10,6 +10,7 @@ JALALI_MONTHS = [
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
 ]
+# کلید بر اساس weekday() میلادی پایتون (دوشنبه=۰)
 WEEKDAY_FA = {
     0: "دوشنبه", 1: "سه‌شنبه", 2: "چهارشنبه", 3: "پنجشنبه",
     4: "جمعه", 5: "شنبه", 6: "یکشنبه",
@@ -25,7 +26,8 @@ def pay_page(token):
     from datetime import datetime as dt
     g_date = dt.strptime(appointment.date, "%Y-%m-%d").date()
     j_date = jdatetime.date.fromgregorian(date=g_date)
-    jalali_str = f"{WEEKDAY_FA[j_date.weekday()]} {j_date.day} {JALALI_MONTHS[j_date.month - 1]} {j_date.year}"
+    weekday_fa = WEEKDAY_FA[g_date.weekday()]
+    jalali_str = f"{weekday_fa} {j_date.day} {JALALI_MONTHS[j_date.month - 1]} {j_date.year}"
 
     amount_toman = get_amount(appointment.session_type, appointment.session_format) // 10
     type_fa = "آنلاین" if appointment.session_type == "online" else "حضوری"

@@ -13,6 +13,9 @@ JALALI_MONTHS = [
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
 ]
 
+# کلید بر اساس weekday() میلادی پایتون (دوشنبه=۰)
+WEEKDAY_FA_LIST = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]
+
 STATUS_COLORS = {
     "paid":    {"red": 0.80, "green": 0.94, "blue": 0.80},
     "cancel":  {"red": 0.98, "green": 0.80, "blue": 0.80},
@@ -109,7 +112,7 @@ def _find_free_buffer_row(worksheet, j_date):
 
 def _write_extra(appointment, month_name, j_date):
     worksheet = _get_spreadsheet().worksheet(month_name)
-    
+
     session_label = "آنلاین" if appointment.session_type == "online" else (
         "حضوری" if appointment.session_type == "inperson" else "—"
     )
@@ -127,7 +130,7 @@ def _write_extra(appointment, month_name, j_date):
         worksheet.format(cell_range, {"backgroundColor": color})
         return
 
-    weekday_fa = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"][j_date.weekday()]
+    weekday_fa = WEEKDAY_FA_LIST[j_date.togregorian().weekday()]
     values = [
         f"⚠️ اضافه (بافر پر بود) — {weekday_fa} {j_date.day} {month_name}",
         appointment.name,

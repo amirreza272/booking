@@ -17,3 +17,38 @@
 2026-09-28T15:12:55.380508 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
 2026-09-28T15:13:35.975460 — خطا در حذف کامل نوبت از گوگل‌شیت: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
 2026-09-28T15:53:00.415493 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (11:30 در 2026-09-28) باید دستی توی شیت اصلاح بشه
+2026-09-29T08:29:27.642792 — خطا در آپدیت وضعیت گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:1016)')))
+2026-09-29T08:44:38.474134 — خطا در آپدیت وضعیت گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:1016)')))
+2026-09-29T12:34:51.881022 — خطا در آپدیت وضعیت گوگل شیت: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+2026-10-01T08:27:36.885046 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (12:30 در 2026-10-01) باید دستی توی شیت اصلاح بشه
+2026-10-02T10:55:12.273670 — خطا در حذف کامل نوبت از گوگل‌شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-03T20:28:16.985318 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='oauth2.googleapis.com', port=443): Read timed out. (read timeout=120)
+2026-10-03T20:42:40.834307 — خطا در حذف کامل نوبت از گوگل‌شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-03T21:29:23.598117 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-06T20:08:06.707760 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:2437)')))
+2026-10-07T09:00:16.715100 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-13T17:35:16.303601 — خطا در آپدیت وضعیت گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-13T17:53:35.385973 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-14T19:57:46.960585 — خطا در آپدیت وضعیت گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-17T09:05:59.282732 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-10-20) باید دستی توی شیت اصلاح بشه
+2026-10-20T16:42:00.574796 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-09-22) باید دستی توی شیت اصلاح بشه
+2026-10-20T16:42:00.575730 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-09-29) باید دستی توی شیت اصلاح بشه
+2026-10-20T16:42:00.576163 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-10-06) باید دستی توی شیت اصلاح بشه
+2026-10-20T16:42:00.576591 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-10-13) باید دستی توی شیت اصلاح بشه
+2026-10-20T19:03:39.168593 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-25T11:39:50.902089 — خطا در آپدیت وضعیت گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-10-28T07:38:43.478870 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (01:15 در 2026-10-28) باید دستی توی شیت اصلاح بشه
+2026-10-31T16:24:31.955485 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-11-01T18:03:17.506593 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-11-02T19:18:23.927713 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (22:00 در 2026-11-02) باید دستی توی شیت اصلاح بشه
+2026-11-03T05:51:36.651591 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:2439)')))
+2026-11-03T05:52:30.490165 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-10-31) باید دستی توی شیت اصلاح بشه
+2026-11-03T05:53:08.322820 — خطا در نوشتن روی گوگل شیت: HTTPSConnectionPool(host='sheets.googleapis.com', port=443): Max retries exceeded with url: /v4/spreadsheets/19Mx0f1lpqBImsayleDKb7x5iAO9_m4v--aOrO2xbMo0?includeGridData=false (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:1018)')))
+2026-11-04T13:23:41.132407 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-11-05T10:15:32.243327 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (22:00 در 2026-10-25) باید دستی توی شیت اصلاح بشه
+2026-11-05T14:05:32.407883 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (14:00 در 2026-11-05) باید دستی توی شیت اصلاح بشه
+2026-11-07T09:37:24.751023 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-11-07) باید دستی توی شیت اصلاح بشه
+2026-11-07T14:31:08.450117 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (15:00 در 2026-11-08) باید دستی توی شیت اصلاح بشه
+2026-11-09T09:00:17.904074 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))
+2026-11-10T15:43:11.443652 — آپدیت وضعیت رد شد — ساعت غیراستاندارد (22:00 در 2026-11-09) باید دستی توی شیت اصلاح بشه
+2026-11-10T17:04:56.588639 — خطا در نوشتن روی گوگل شیت: ('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))

@@ -35,8 +35,8 @@ function toFa(n) {
 
 
 const BASE_PRICE       = 900000;
-const ONLINE_SURCHARGE = 50000;
-const COUPLE_SURCHARGE = 50000;
+const ONLINE_SURCHARGE = 100000;
+const COUPLE_SURCHARGE = 100000;
 
 function calcPrice() {
     let price = BASE_PRICE;

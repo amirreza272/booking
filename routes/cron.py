@@ -60,7 +60,7 @@ def cron_doctor_report():
     tomorrow_str = (today_tehran() + timedelta(days=1)).strftime("%Y-%m-%d")
     items = Appointment.query.filter(
         Appointment.date == tomorrow_str,
-        Appointment.payment_status.in_(("paid", "not")),
+        Appointment.payment_status.in_(("paid", "not", "deposit")),
     ).order_by(Appointment.time).all()
 
     result = notify_doctor_daily_schedule(items)

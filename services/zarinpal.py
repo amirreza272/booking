@@ -8,6 +8,10 @@ BASE_AMOUNT      = 9000000
 ONLINE_SURCHARGE = 500000
 COUPLE_SURCHARGE = 500000
 
+# پیش‌پرداخت — تنها مبلغی که از طریق سایت دریافت می‌شه (ریال) = ۱۰۰ هزار تومان
+# مابقی هزینه‌ی جلسه بعداً توسط خود کلینیک دریافت می‌شه.
+DEPOSIT_AMOUNT   = 1000000
+
 CALLBACK_URL     = "https://masircenter.com/booking/api/payment/callback"
 
 # ─── سوییچ sandbox / production ────────────────────────
@@ -20,6 +24,7 @@ ZARINPAL_START   = f"https://{_START_DOMAIN}/pg/StartPay/"
 
 
 def get_amount(session_type, session_format="individual"):
+    """هزینه‌ی کل جلسه (ریال)."""
     amount = BASE_AMOUNT
     if session_type == "online":
         amount += ONLINE_SURCHARGE
@@ -28,8 +33,11 @@ def get_amount(session_type, session_format="individual"):
     return amount
 
 
-def request_payment(description, session_type, session_format="individual", callback_url=None):
-    amount = get_amount(session_type, session_format)
+def request_payment(description, session_type, session_format="individual", callback_url=None, amount=None):
+    """amount اگه داده نشه، هزینه‌ی کل جلسه حساب می‌شه (لینک پرداخت اختصاصی)؛
+    رزرو عمومی سایت DEPOSIT_AMOUNT رو پاس می‌ده."""
+    if amount is None:
+        amount = get_amount(session_type, session_format)
     cb_url = callback_url or CALLBACK_URL
     try:
         resp = requests.post(ZARINPAL_REQUEST, json={

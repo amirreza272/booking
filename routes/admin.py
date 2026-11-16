@@ -6,8 +6,8 @@ from sqlalchemy import or_
 from extensions import db
 from models import Appointment, SmsLog, Customer, PendingRebooking, generate_payment_token
 from config import Config
-from services.booking import validate_admin_booking
-from services.zarinpal import get_amount
+from services.booking import validate_admin_booking, scope_for_new
+from services.zarinpal import get_amount, DEPOSIT_AMOUNT
 from services.gsheet import write_appointment, update_status, clear_appointment_row
 from services.gsheet_customers import upsert_customer, delete_customer_row
 from services.customers import ensure_customer_exists
@@ -65,7 +65,8 @@ def login(username):
                 f.write(error_text + "\n" + "=" * 80 + "\n")
         except Exception:
             pass
-        return jsonify({"success": False, "message": "خطای سرور — لاگ ذخیره شد", "debug": error_text}), 500
+        # traceback فقط توی فایل لاگ ذخیره می‌شه، نه توی پاسخ به کلاینت
+        return jsonify({"success": False, "message": "خطای سرور — لاگ ذخیره شد"}), 500
 
 
 @admin_bp.route("/<username>/logout")
@@ -119,11 +120,10 @@ def api_get_appointment(username, appointment_id):
 def api_list_appointments(username):
     """
     برای جلوگیری از سنگین‌شدن لیست با گذشت زمان، یک سقف پیش‌فرض (limit) روی
-    تعداد نتایج گذاشته شده. فرانت‌اند برای «نوبت‌ها» یک بازه‌ی تاریخی منطقی
-    (هفته‌ی گذشته تا چند ماه آینده) به‌صورت پیش‌فرض می‌فرسته و برای «بایگانی»
-    (نوبت‌های قدیمی‌تر) هم limit جدا می‌فرسته — اینجا فقط ازش پیروی می‌کنیم.
-    اگه limit ارسال نشه (مثلاً برای داشبورد یا جزئیات یک روز خاص در تقویم)،
-    رفتار قبلی (بدون سقف) دست‌نخورده می‌مونه.
+    تعداد نتایج گذاشته شده. اگه limit ارسال نشه (مثلاً برای داشبورد یا
+    جزئیات یک روز خاص در تقویم)، رفتار قبلی (بدون سقف) دست‌نخورده می‌مونه.
+    exclude_blocked=1: نوبت‌های مسدودشده از نتایج حذف می‌شن (سمت سرور، تا
+    سقف limit با مسدودها پر نشه).
     """
     date_from = request.args.get("from")
     date_to = request.args.get("to")
@@ -138,6 +138,8 @@ def api_list_appointments(username):
         query = query.filter(Appointment.date <= date_to)
     if status:
         query = query.filter(Appointment.payment_status == status)
+    if request.args.get("exclude_blocked") == "1":
+        query = query.filter(Appointment.payment_status != "blocked")
     if q:
         like = f"%{q}%"
         query = query.filter(or_(Appointment.name.like(like), Appointment.phone.like(like)))
@@ -174,8 +176,7 @@ def api_edit_appointment(username, appointment_id):
     """
     ویرایش کامل و مستقیم یک نوبت — هر فیلدی (اسم، موبایل، تاریخ، ساعت،
     نوع جلسه، فرمت جلسه، وضعیت پرداخت، یادداشت) قابل تغییره، چه نوبت گذشته باشه چه
-    آینده. برخلاف حالت قبلی (لغو + ثبت نوبت جدید)، همین رکورد مستقیم
-    آپدیت می‌شه — پس هیچ ردی از خودش (نوبت لغوشده‌ی اضافه) باقی نمی‌مونه.
+    آینده. همین رکورد مستقیم آپدیت می‌شه — پس هیچ ردی از خودش باقی نمی‌مونه.
     """
     appointment = Appointment.query.get_or_404(appointment_id)
     data = request.get_json() or {}
@@ -183,9 +184,21 @@ def api_edit_appointment(username, appointment_id):
     new_date = (data.get("date") or appointment.date).strip()
     new_time = (data.get("time") or appointment.time).strip()
 
-    # فقط اگه واقعاً تاریخ/ساعت عوض شده، چک تداخل بزن (با نادیده‌گرفتن خودش)
-    if new_date != appointment.date or new_time != appointment.time:
-        error = validate_admin_booking(new_date, new_time, exclude_appointment_id=appointment.id)
+    new_status = data.get("payment_status", appointment.payment_status)
+    new_type = data.get("session_type", appointment.session_type)
+
+    # چک تداخل: اگه تاریخ/ساعت/نوع عوض شده یا نوبت لغوشده دوباره فعال می‌شه
+    # (با نادیده‌گرفتن خودش). رکورد لغوشده جایی رو اشغال نمی‌کنه.
+    changed = (
+        new_date != appointment.date or new_time != appointment.time
+        or new_type != appointment.session_type
+        or (appointment.payment_status == "cancel" and new_status != "cancel")
+    )
+    if changed and new_status != "cancel":
+        error = validate_admin_booking(
+            new_date, new_time, exclude_appointment_id=appointment.id,
+            scope=scope_for_new(new_status, new_type),
+        )
         if error:
             return jsonify({"success": False, "message": error}), 400
 
@@ -245,8 +258,8 @@ def api_manual_appointment(username):
     if session_format not in ("individual", "couple"):
         return jsonify({"success": False, "message": "نوع مراجعه (فردی/زوجی) معتبر نیست"}), 400
 
-    # ادمین می‌تونه هر تاریخ/ساعتی (غیر از گذشته) تعریف کنه — حتی خارج از ۷ ساعت استاندارد.
-    error = validate_admin_booking(date, time)
+    # ادمین می‌تونه هر تاریخ/ساعتی تعریف کنه — حتی خارج از ۷ ساعت استاندارد.
+    error = validate_admin_booking(date, time, scope=scope_for_new("not", session_type))
     if error:
         return jsonify({"success": False, "message": error}), 400
 
@@ -273,7 +286,7 @@ def api_manual_appointment(username):
 def api_block_slot(username):
     """
     مسدودسازی یک یا چند ساعت هم‌زمان در یک روز.
-    ورودی می‌تونه یکی از این دو شکل باشه (سازگار با نسخه‌ی قدیمی و جدید فرانت):
+    ورودی می‌تونه یکی از این دو شکل باشه:
     - {"date": "...", "times": ["11:00", "12:15"], "reason": "..."}
     - {"date": "...", "time": "11:00", "reason": "..."}   (نسخه‌ی قدیمی، تک‌ساعته)
     """
@@ -281,6 +294,12 @@ def api_block_slot(username):
     date   = (data.get("date") or "").strip()
     times  = data.get("times") or ([data.get("time")] if data.get("time") else [])
     reason = (data.get("reason") or "").strip()
+    # scope: all (کل ساعت) / online (فقط آنلاین مسدود) / inperson (فقط حضوری مسدود)
+    scope = (data.get("scope") or "all").strip()
+    if scope not in ("all", "online", "inperson"):
+        return jsonify({"success": False, "message": "نوع مسدودسازی نامعتبر است"}), 400
+    block_type = {"all": "blocked", "online": "blocked_online", "inperson": "blocked_inperson"}[scope]
+    scope_label = {"all": "", "online": "فقط آنلاین", "inperson": "فقط حضوری"}[scope]
 
     times = [t.strip() for t in times if t and t.strip()]
 
@@ -291,17 +310,17 @@ def api_block_slot(username):
     errors = []
 
     for time in times:
-        error = validate_admin_booking(date, time)
+        error = validate_admin_booking(date, time, scope=scope)
         if error:
             errors.append(f"{time}: {error}")
             continue
 
         appointment = Appointment(
-            name="مسدود شده (ادمین)",
+            name="مسدود شده (ادمین)" + (f" — {scope_label}" if scope_label else ""),
             phone="-",
             date=date,
             time=time,
-            session_type="blocked",
+            session_type=block_type,
             payment_status="blocked",
             notes=reason or "مسدودسازی دستی",
             payment_token=generate_payment_token(),
@@ -444,8 +463,8 @@ def api_sms_logs(username):
 def api_send_sms(username):
     """
     ارسال دستی پیامک — برای مواقعی که خودت (نه سیستم خودکار) می‌خوای
-    یه پیام آزاد به یک یا چند شماره بفرستی. عبارت «لغو ۱۱» طبق الزام
-    SignalAds خودکار به انتهای پیام اضافه می‌شه (send_sms این کار رو انجام می‌ده).
+    یه پیام آزاد به یک یا چند شماره بفرستی. عبارت «لغو ۱۱» خودکار به
+    انتهای پیام اضافه می‌شه (send_sms این کار رو انجام می‌ده).
     """
     data = request.get_json() or {}
     phones_raw = (data.get("phones") or "").strip()
@@ -490,8 +509,9 @@ def api_monthly_stats(username):
     blocked   = [a for a in items if a.payment_status == "blocked"]
     paid      = [a for a in items if a.payment_status == "paid"]
     unpaid    = [a for a in items if a.payment_status == "not"]
+    deposit   = [a for a in items if a.payment_status == "deposit"]
 
-    active = paid + unpaid  # نوبت‌های واقعاً برگزارشده/برنامه‌ریزی‌شده (مسدودی‌ها جزو این‌ها نیستن)
+    active = paid + unpaid + deposit  # نوبت‌های واقعاً برگزارشده/برنامه‌ریزی‌شده (مسدودی‌ها جزو این‌ها نیستن)
 
     return jsonify({
         "success": True,
@@ -504,31 +524,51 @@ def api_monthly_stats(username):
         "online_sessions": sum(1 for a in active if a.session_type == "online"),
         "inperson_sessions": sum(1 for a in active if a.session_type == "inperson"),
         # مقادیر خام (ریال) — تقسیم بر ۱۰ برای نمایش به‌تومان توی فرانت‌اند انجام می‌شه
+        # درآمد = نوبت‌های کاملاً پرداخت‌شده + پیش‌پرداخت‌های دریافت‌شده
         "income": {
-            "online": sum(get_amount(a.session_type, a.session_format) for a in paid if a.session_type == "online"),
-            "inperson": sum(get_amount(a.session_type, a.session_format) for a in paid if a.session_type == "inperson"),
+            "online": sum(get_amount(a.session_type, a.session_format) for a in paid if a.session_type == "online")
+                      + DEPOSIT_AMOUNT * sum(1 for a in deposit if a.session_type == "online"),
+            "inperson": sum(get_amount(a.session_type, a.session_format) for a in paid if a.session_type == "inperson")
+                        + DEPOSIT_AMOUNT * sum(1 for a in deposit if a.session_type == "inperson"),
         },
+        # طلب = کل هزینه‌ی نوبت‌های بدون پرداخت + مابقی نوبت‌های پیش‌پرداخت‌شده
         "debt": {
-            "online": sum(get_amount(a.session_type, a.session_format) for a in unpaid if a.session_type == "online"),
-            "inperson": sum(get_amount(a.session_type, a.session_format) for a in unpaid if a.session_type == "inperson"),
+            "online": sum(get_amount(a.session_type, a.session_format) for a in unpaid if a.session_type == "online")
+                      + sum(get_amount(a.session_type, a.session_format) - DEPOSIT_AMOUNT for a in deposit if a.session_type == "online"),
+            "inperson": sum(get_amount(a.session_type, a.session_format) for a in unpaid if a.session_type == "inperson")
+                        + sum(get_amount(a.session_type, a.session_format) - DEPOSIT_AMOUNT for a in deposit if a.session_type == "inperson"),
         },
     })
+
+
+def _norm_name(n):
+    """نرمال‌سازی نام برای گروه‌بندی: یکسان‌سازی ی/ک عربی و حذف فاصله‌های اضافه."""
+    n = (n or "").replace("ي", "ی").replace("ك", "ک")
+    return " ".join(n.split())
 
 
 @admin_bp.route("/<username>/api/clients/debts")
 @require_admin
 def api_client_debts(username):
-    unpaid = Appointment.query.filter_by(payment_status="not").all()
+    """
+    مراجعین بر اساس *نام* گروه‌بندی می‌شن (نه شماره‌ی موبایل)، چون ممکنه
+    چند نفر شماره‌ی یکسان داشته باشن. اگه یک نفر چند شماره داشته باشه،
+    اولین شماره‌ی معتبر برای پیامک یادآوری استفاده می‌شه.
+    """
+    unpaid = Appointment.query.filter(Appointment.payment_status.in_(("not", "deposit"))).all()
     debts = {}
     for a in unpaid:
         amount = get_amount(a.session_type, a.session_format)
-        # اگه موبایل نداشته باشه (نوبت دستی بدون شماره)، هرکدوم جدا حساب می‌شه —
-        # وگرنه چند مراجع بی‌شماره‌ی مختلف اشتباهی زیر یه ردیف جمع می‌شدن.
-        key = a.phone if a.phone and a.phone != "-" else f"noph-{a.id}"
+        if a.payment_status == "deposit":
+            amount -= DEPOSIT_AMOUNT   # پیش‌پرداخت قبلاً دریافت شده
+        name = _norm_name(a.name)
+        key = name if name and name != "بدون نام" else f"noname-{a.id}"
         entry = debts.setdefault(key, {
-            "name": a.name, "phone": a.phone, "total_debt": 0,
+            "name": name or a.name, "phone": a.phone, "total_debt": 0,
             "sessions": 0, "appointment_ids": [],
         })
+        if entry["phone"] in (None, "", "-") and a.phone and a.phone != "-":
+            entry["phone"] = a.phone
         entry["total_debt"] += amount
         entry["sessions"] += 1
         entry["appointment_ids"].append(a.id)
@@ -546,7 +586,7 @@ def api_settle_debt(username):
 
     items = Appointment.query.filter(
         Appointment.id.in_(ids),
-        Appointment.payment_status == "not",
+        Appointment.payment_status.in_(("not", "deposit")),
     ).all()
     if not items:
         return jsonify({"success": False, "message": "طلبی برای تسویه یافت نشد"}), 404
